@@ -1,8 +1,11 @@
-import React from "react";
+import React, { ReactNode } from "react";
 import styles from './index.module.less';
 import Header from "../Header";
-import {Modal} from 'antd'
-const Layout: React.FC = ( { children} ) => {
+
+interface FCprops {
+    children:ReactNode
+}
+const Layout: React.FC<FCprops> = ( { children} ) => {
     return (
         <div>
             <Header />

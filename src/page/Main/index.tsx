@@ -1,10 +1,31 @@
 import React, { useEffect, useState } from "react";
 import styles from "./index.module.less"
 import NoteItem from "../../components/NoteItem";
-import './index.css';
 import { Modal } from 'antd';
 import NoteContent from "../../components/NoteContent";
+interface IFNoteItem {
+  id: string,
+  type: string,
+  note_card: {
+      cover: string,
+      title: string,
+      user: {
+          nick_name: string,
+          avatar: string,
+          userId: string
+      },
+      liked_info: {
+          liked: boolean,
+          liked_count: string
+      }
+  }
+
+}
+// context 
+import { NoteContext } from "../../Context";
 const Main: React.FC = () => {
+
+  // 示例数据
   const data = {
     id: '63e4f47a0000000004006523',
     type: '2',
@@ -39,26 +60,33 @@ const Main: React.FC = () => {
       }
     }
   }
+
+
+  // state
+  const [curData, setaCurData] = useState(data); // 当前详情数据
+
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [arr, setArr] = useState([...new Array(20).fill(data), ...new Array(15).fill(data2)]);
+
+
+  //context
+  const NoteProvider = NoteContext.Provider;
+  // 
   useEffect(() => {
+    // 监听滚动
     document.addEventListener('scroll', loadNext);
     return () => {
       document.removeEventListener("scroll", loadNext);
     }
-  }, [arr])
+  }, [arr]);
 
-  const handleOk = () => {
-    setIsModalOpen(true);
-    console.log(12321,isModalOpen);
-    
-  };
 
+  // function
   const handleCancel = () => {
     setIsModalOpen(false);
-    console.log(432,isModalOpen);
-    
   };
+  // 滚动加载
   const loadNext = () => {
     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
     const clientHeight = document.documentElement.clientHeight;
@@ -67,30 +95,43 @@ const Main: React.FC = () => {
       let newArr = new Array(10).fill(data);
       const A = [...arr, ...newArr];
       setArr(A);
-      console.log(A);
-
-
     }
   }
+
+  //查看详细笔记
+  const showDetail = (item: IFNoteItem) => {
+    setaCurData(item);
+    setIsModalOpen(true);
+  };
+
+
   return (
     <>
-    <div className={styles['feeds-page']}>
-      <ul>
-        <div onClick={handleOk}>11ddd</div>
-        {arr.map((item) => {
-          return <NoteItem item={item} />
-        })}
-      </ul>
-    </div>
-    <Modal wrapClassName="wrapper"
-      maskStyle={{backgroundColor:'hsla(0,0%,97.6%,.98)'}}
-      title={null} open={isModalOpen}
-      onCancel={handleCancel}
-      footer={null}
-      width={800}
-      >
-        <NoteContent data={data}/>
-        </Modal>
+      <div className={styles['feeds-page']}>
+        <ul>
+          {arr.map((item) => {
+            return <NoteItem key={item.id + Math.random()} item={item} showDetail={() => showDetail(item)} />
+          })}
+        </ul>
+      </div>
+      {
+        isModalOpen
+          ? (
+            <Modal
+              maskStyle={{ backgroundColor: 'hsla(0,0%,97.6%,.98)' }}
+              title={null} open={isModalOpen}
+              onCancel={handleCancel}
+              footer={null}
+              width={800}
+            >
+              <NoteProvider value={curData}>
+                <NoteContent data={data} />
+              </NoteProvider>
+            </Modal>
+          )
+          : null
+    }
+
     </>
   );
 };
