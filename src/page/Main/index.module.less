@@ -1,0 +1,30 @@
+.feeds-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    padding-top: 88px;
+    min-height: 100vh;
+    width: 100vw;
+    min-width: 960px;
+    max-width: 100%;
+    background: #fff;
+    
+}
+:global {
+    .ant-modal-content {
+        border: .5px solid rgba(0, 0, 0, .08);
+        box-shadow: 0 0 100px rgba(0, 0, 0, .1);
+        border-radius: 24px;
+        .ant-modal-close {
+            position: absolute;
+            left: 100%;
+        }
+        .ant-modal-body{
+            height: 600px;
+            width: 600px;
+            padding: 12px;
+            display: flex;
+        }
+    }
+  }
