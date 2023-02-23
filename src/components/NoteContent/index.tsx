@@ -1,8 +1,9 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { ReactEventHandler, useContext, useEffect, useState } from "react";
 import styles from './index.module.less';
 import { LeftCircleOutlined, RightCircleOutlined, createFromIconfontCN } from "@ant-design/icons";
 import { NoteContext } from "../../Context";
-import { Input } from "antd";
+import { Button, Popover } from "antd";
+import EmojiInput from "../EmojiInput";
 
 interface propsIF {
     data: object
@@ -34,12 +35,17 @@ const NoteContent: React.FC<propsIF> = ({ data }) => {
     const comments = "即使小米13要卖两年，出13s，也得是明年了";
     let likeCount = 66;
     const list = new Array(6).fill(1);
+    let inputRef:HTMLInputElement | null;
 
     // state
     const [cur, setCur] = useState(1);
     const [liked, setLiked] = useState(false);
     const [isShow, setIsShow] = useState(false);
     const [placeholder, setPholder] = useState<string | undefined>('请留下有爱的评论吧！');
+    const [isEmojiShow, setIsEmojiShow] = useState(false);
+    const [comments_, setComments_] = useState<string | number | readonly string[] | undefined>("");
+    const [hasInput, setHasInput] = useState<string | undefined>("");
+    // function 
     const preImg = () => {
         if (cur === 0) {
             setCur(arr.length - 1);
@@ -72,6 +78,31 @@ const NoteContent: React.FC<propsIF> = ({ data }) => {
     const likeOption = () => {
         setLiked(!liked);
     }
+
+    const handleOpenEmojiChange = (open: boolean) => {
+        setIsEmojiShow(open);
+    }
+
+    const handleInput = ( e: React.ChangeEvent<HTMLInputElement>) => {
+        setComments_(e.target.value);
+        if(e.target.value) {
+            setHasInput(styles['hasInput']);
+        }
+        else {
+            setHasInput("");
+        }
+             
+    }
+    const emojiInput = (emoji:string) => {
+        if(comments_){
+            setComments_(comments_ + emoji);
+        }
+        else {
+            setComments_(emoji);
+        }
+        setHasInput(styles['hasInput']);
+    } 
+
     return (
         <>
             <div className={styles['media-wrapper']} onMouseOver={showOption} onMouseOut={hiddenOption}>
@@ -139,17 +170,17 @@ const NoteContent: React.FC<propsIF> = ({ data }) => {
                 <div className={styles['footer-bar']}>
                     <div className={styles['options']}>
                         <div className={styles['left']}>
-                            <span className={styles['like-wrapper']}> 
-                                <MyIcon className={styles['icon']} type="icon-weishoucang"/> 
+                            <span className={styles['like-wrapper']}>
+                                <MyIcon className={styles['icon']} type="icon-weishoucang" />
                                 <span className={styles['count']}>388</span>
                             </span>
                             <span className={styles['collect-wrapper']}>
-                            <MyIcon className={styles['icon']} type="icon-shoucang"/>
-                            <span className={styles['count']}>111</span>
+                                <MyIcon className={styles['icon']} type="icon-shoucang" />
+                                <span className={styles['count']}>111</span>
                             </span>
-                            <span className={styles['chat-wrapper']}>
-                            <MyIcon className={styles['icon']} type="icon-pinglun"/>
-                            <span className={styles['count']}>6</span>
+                            <span className={styles['chat-wrapper']} onClick={() => inputRef?.focus()}>
+                                <MyIcon className={styles['icon']} type="icon-pinglun" />
+                                <span className={styles['count']}>6</span>
                             </span>
                         </div>
                         <div className={styles['right']}>
@@ -157,12 +188,29 @@ const NoteContent: React.FC<propsIF> = ({ data }) => {
                         </div>
                     </div>
                     <div className={styles['outer']}>
-                        <div className={styles['input-wrapper']}>
-                            <input type='text' className={styles['input']} placeholder={placeholder} onFocus={()=>setPholder(undefined)} onBlur={()=> setPholder('请留下有爱的评论吧！')}/>
-                            <div className={styles['emoji']}>
-                                <MyIcon type="icon-xiaolian"/>
-                            </div>
+                        <div className={styles['input-wrapper'] +" " + hasInput}>
+                            <input type='text'
+                                className={styles['input']}
+                                placeholder={placeholder}
+                                ref={input => inputRef=input}
+                                onFocus={() => setPholder(undefined)}
+                                onBlur={() => setPholder('请留下有爱的评论吧！')}
+                                value={comments_}
+                                onChange={handleInput}
+                            />
+                            <Popover 
+                            title={null} 
+                            content={<EmojiInput openChang = {handleOpenEmojiChange} emojiInput = {emojiInput}/>} 
+                            trigger='click' 
+                            open={isEmojiShow} 
+                            onOpenChange={handleOpenEmojiChange}>
+                                <div className={styles['emoji']} >
+                                    <MyIcon type="icon-xiaolian" />
+                                </div>
+                            </Popover>
+
                         </div>
+                            <Button className={styles['button']}>发送</Button>
                     </div>
                 </div>
             </div>
