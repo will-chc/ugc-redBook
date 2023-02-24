@@ -1,10 +1,8 @@
 import React from "react";
-import {Modal} from 'antd'
 const FollowPage: React.FC = () => {
     return (
-        <div>
+        <div style={{height:600,backgroundColor:'red'}}>
             <span>follow</span>
-            <Modal open={true}>1111</Modal>
         </div>
     );
 };

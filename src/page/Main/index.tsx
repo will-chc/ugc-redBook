@@ -1,28 +1,34 @@
 import React, { useEffect, useState } from "react";
 import styles from "./index.module.less"
 import NoteItem from "../../components/NoteItem";
-import { Modal } from 'antd';
+import { Modal, Form, Input, Button } from 'antd';
 import NoteContent from "../../components/NoteContent";
+import { MyIcon } from "../../Icon/MyIcon";
+//reg
+import { EmailReg, PasswordReg } from "../../utils/regex";
+// context 
+import { NoteContext } from "../../Context";
+
+
 interface IFNoteItem {
   id: string,
   type: string,
   note_card: {
-      cover: string,
-      title: string,
-      user: {
-          nick_name: string,
-          avatar: string,
-          userId: string
-      },
-      liked_info: {
-          liked: boolean,
-          liked_count: string
-      }
+    cover: string,
+    title: string,
+    user: {
+      nick_name: string,
+      avatar: string,
+      userId: string
+    },
+    liked_info: {
+      liked: boolean,
+      liked_count: string
+    }
   }
-
 }
-// context 
-import { NoteContext } from "../../Context";
+const FormItem = Form.Item;
+
 const Main: React.FC = () => {
 
   // 示例数据
@@ -62,12 +68,21 @@ const Main: React.FC = () => {
   }
 
 
+  const [form] = Form.useForm();
+
   // state
   const [curData, setaCurData] = useState(data); // 当前详情数据
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [arr, setArr] = useState([...new Array(20).fill(data), ...new Array(15).fill(data2)]);
+
+  const [loginBtn, setLoginBtn] = useState(true);
+
+  const [mode, setMode] = useState('signUp');
+
+  const [isLogin, setILogin] = useState(Boolean(localStorage.getItem('token')));
+
 
 
   //context
@@ -104,6 +119,60 @@ const Main: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  // 校验
+  const checkEmail = (rules: any, value: any) => {
+    if (!value) {
+      setLoginBtn(true);
+      return Promise.reject('');
+    }
+
+    if (!EmailReg.test(value)) {
+      setLoginBtn(true);
+      return Promise.reject('请输入正确的邮箱');
+    }
+
+    const { validateFields } = form;
+    if (loginBtn) {
+      validateFields(['password']).catch(err => {
+        console.error("password error", err);
+        return Promise.resolve();
+      });
+      setLoginBtn(false);
+    }
+
+
+  }
+
+  const checkPasswrod = (rules: any, value: any) => {
+    if (!value || value.length < 6) {
+      setLoginBtn(true);
+      return Promise.reject("");
+    }
+    const { validateFields } = form;
+    if (loginBtn) {
+      validateFields(['email']).catch(err => {
+        console.error("email error", err);
+        return Promise.resolve();
+      });
+      setLoginBtn(false);
+    }
+  }
+
+  // login
+  const handleLogin = () => {
+    const { getFieldsValue } = form;
+    const { email, password } = getFieldsValue();
+    console.log(email, password);
+    setILogin(true);
+
+  }
+
+  // style
+  const styleControl = (str: string) => {
+    if (mode == 'signIn') return " " + str;
+    return "";
+  }
+
 
   return (
     <>
@@ -130,7 +199,88 @@ const Main: React.FC = () => {
             </Modal>
           )
           : null
-    }
+      }
+      {
+        !isLogin
+          ? (
+            <Modal title={null}
+              footer={null}
+              width={680}
+              open={!isLogin}
+              className={styles['login-box']}
+            >
+              <div className={styles['left']}>
+                <div className={styles['smile']}>
+                  <MyIcon className={styles['smile-icon']} type='icon-smile-fill' onClick={() => setMode('signIn')} />
+                </div>
+                <div className={styles['register'] +styleControl(styles['register-show'])}>
+                  <div className={styles['title']}>账号注册</div>
+                  <div className={styles['input-container']}>
+                    <Form form={form} >
+                      <FormItem name='email'
+                        rules={[
+                          {
+                            validator: checkEmail
+                          }
+                        ]}>
+                        <Input placeholder="输入邮箱账号" />
+                      </FormItem>
+                      <FormItem name='password'
+                        rules={[
+                          {
+                            validator: checkPasswrod
+                          }
+                        ]}
+                      >
+                        <Input placeholder="输入密码" />  
+                      </FormItem>
+                      <Button disabled={loginBtn} className={styles['button']} onClick={handleLogin} >注册账号</Button>
+                    </Form>
+                  </div>
+                  <div className={styles['agreement']}>
+                    <img src="src/assets/pacmen.png" alt="" />
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles['right']}>
+                <div className={styles['smile-hide'] +styleControl(styles['icon-show'])}>
+                  <MyIcon className={styles['smile-icon']} type='icon-xiaolian' onClick={() => setMode('signUp')} />
+                </div>
+                <div className={styles['login-wrapper'] +styleControl(styles['login-wrapper-hidden'])}>
+                  <div className={styles['title']}>邮箱登录</div>
+                  <div className={styles['input-container']}>
+                    <Form form={form} >
+                      <FormItem name='email'
+                        rules={[
+                          {
+                            validator: checkEmail
+
+                          }
+                        ]}>
+                        <Input placeholder="输入邮箱账号" />
+                      </FormItem>
+                      <FormItem name='password'
+                        rules={[
+                          {
+                            validator: checkPasswrod
+                          }
+                        ]}
+                      >
+                        <Input placeholder="输入密码" />
+                      </FormItem>
+                      <Button disabled={loginBtn} className={styles['button']} onClick={handleLogin} >登录</Button>
+                    </Form>
+                  </div>
+                  <div className={styles['agreement']}>
+                    <img src="src/assets/pacmen.png" alt="" />
+                  </div>
+                </div>
+              </div>
+            </Modal>
+          )
+          : null
+      }
 
     </>
   );

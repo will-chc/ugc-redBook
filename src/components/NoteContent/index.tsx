@@ -1,9 +1,11 @@
 import React, { ReactEventHandler, useContext, useEffect, useState } from "react";
 import styles from './index.module.less';
-import { LeftCircleOutlined, RightCircleOutlined, createFromIconfontCN } from "@ant-design/icons";
+import { LeftCircleOutlined, RightCircleOutlined } from "@ant-design/icons";
+// import { createFromIconfontCN } from "@ant-design/icons";
 import { NoteContext } from "../../Context";
 import { Button, Popover } from "antd";
 import EmojiInput from "../EmojiInput";
+import { MyIcon } from "../../Icon/MyIcon";
 
 interface propsIF {
     data: object
@@ -17,9 +19,9 @@ const NoteContent: React.FC<propsIF> = ({ data }) => {
     }, [contextValue])
 
     // icon
-    const MyIcon = createFromIconfontCN({
-        scriptUrl: 'src/Icon/aliicon.js', // 在 iconfont.cn 上生成
-    });
+    // const MyIcon = createFromIconfontCN({
+    //     scriptUrl: 'src/Icon/aliicon.js', // 在 iconfont.cn 上生成
+    // });
     // 测试数据
     const arr = [
         "https://sns-img-hw.xhscdn.com/fc53deac-8d48-f4ee-feb1-c8316f3723d3?imageView2/2/h/1200/format/webp",

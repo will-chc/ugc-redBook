@@ -1,23 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Redirect, Route, Switch } from "react-router-dom";
 import Main from "../page/Main";
 import FollowPage from "../page/Follow";
+import CreatePage from '../page/Create';
 import Layout from "../components/Layout";
-import { Button, Modal } from 'antd';
-const RouterPage = () => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const showModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleOk = () => {
-    setIsModalOpen(false);
-  };
-
-  const handleCancel = () => {
-    setIsModalOpen(false);
-  };
+const RouterPage:React.FC = () => {
     return (
         <Router>
             <Switch>
@@ -26,8 +13,9 @@ const RouterPage = () => {
                     render={() => (
                         <Layout>
                             <Switch>
-                                <Route path='/follow' component={FollowPage} />
-                                <Route path='/' component={Main} />
+                                <Route path='/create' component={CreatePage} />
+                                <Route path='/explore' component={Main} />
+                                <Redirect to="/explore" />
                             </Switch>
                         </Layout>
                     )}

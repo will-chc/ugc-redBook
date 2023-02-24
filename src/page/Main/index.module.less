@@ -9,26 +9,195 @@
     min-width: 960px;
     max-width: 100%;
     background: #fff;
-    
+
 }
+
 :global {
     .ant-modal-content {
         border: .5px solid rgba(0, 0, 0, .08);
         box-shadow: 0 0 100px rgba(0, 0, 0, .1);
         border-radius: 24px;
+        min-width: 800px;
+        min-height: 600px;
 
         .ant-modal-close {
             position: absolute;
             left: 101%;
-            .ant-modal-close-x{
+
+            .ant-modal-close-x {
                 background-color: #fff;
                 border-radius: 100%;
             }
         }
-        .ant-modal-body{
+
+        .ant-modal-body {
             height: 600px;
             padding: 12px;
             display: flex;
         }
     }
-  }
+}
+
+.login-box {
+    :global {
+        .ant-modal-content {
+            min-width: 660px;
+            min-height: 400px;
+
+            .ant-modal-body {
+                height: 400px;
+                padding: 60px 0;
+            }
+
+            .ant-modal-close {
+                display: none;
+            }
+        }
+    }
+
+    .right,
+    .left {
+        width: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .smile, .smile-hide {
+            position: absolute;
+            font-size: 120px;
+            height: 80%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            .smile-icon {
+                transition: all 1s linear;
+            }
+
+            .smile-icon:hover {
+                transform: rotate(180deg);
+            }
+
+        }
+
+        .login-wrapper,
+        .register {
+            width: 100%;
+            background-color: #fff;
+            .title {
+                font-size: 22px;
+                color: #333;
+                font-weight: 600;
+                text-align: center;
+            }
+
+            .input-container {
+                margin-top: 28px;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                padding: 0 30px;
+
+                :global {
+                    .ant-form {
+                        display: flex;
+                        flex-direction: column;
+
+                        .ant-input {
+                            flex: 1;
+                            font-size: 16px;
+                            font-weight: 510;
+                            height: 40px;
+                            caret-color: #ff2442;
+
+                        }
+
+                        input {
+                            -webkit-appearance: none;
+                            appearance: none;
+                            outline: none;
+                            border: none;
+                            border-bottom: 1px solid rgba(0, 0, 0, .08);
+                            background: none;
+                            padding: 0;
+                        }
+
+                        .ant-btn {
+                            background: #ff2442;
+                            color: #fff;
+                            height: 40px;
+                            border-radius: 80px;
+                            margin: 10px 20px;
+                        }
+
+                        .ant-btn[disabled] {
+                            background: rgba(0, 0, 0, .04);
+                            color: rgba(51, 51, 51, .2);
+                        }
+                    }
+                }
+            }
+
+            .agreement {
+                display: flex;
+                justify-content: center;
+                margin-top: 10px;
+
+                img {
+                    width: 150px;
+                }
+            }
+        }
+
+        .register {
+            position: absolute;
+            top: 52px;
+            width: 50%;
+            visibility: hidden;
+            background-color: #fff;
+        }
+        
+
+        @keyframes register {
+
+            /*设置内容由显示变为隐藏*/
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+        @keyframes hide_login {
+            0% {
+                opacity: 1;
+            }
+           
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .register-show {
+            visibility: visible;
+            animation: register 2s;
+        }
+        .login-wrapper-hidden {
+            visibility: hidden;
+            animation: hide_login 2s;
+        }
+        .smile-hide {
+            visibility: hidden;
+        }
+        .icon-show {
+            visibility: visible;
+        }
+    }
+
+    .left {
+        border-right: 0.5px solid rgba(0, 0, 0, .08);
+    }
+
+}
