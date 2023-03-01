@@ -140,7 +140,7 @@ const NoteContent: React.FC<propsIF> = ({ data }) => {
                         <div className={styles['list-container']}>
                             {list.map((list_item) => {
                                 return (
-                                    <div className={styles['comments-item']}>
+                                    <div className={styles['comments-item']} key={Math.random()}>
                                         <div className={styles['avatar']}>
                                             <img src="https://sns-avatar-qc.xhscdn.com/avatar/5fe0081033f23588f454408a.jpg" alt="" width={32} height={32} />
                                         </div>

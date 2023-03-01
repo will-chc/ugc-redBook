@@ -15,7 +15,7 @@ const EmojiInput: React.FC <FCprops>= ( {openChang, emojiInput}) => {
     return (
         <div className={styles['emoji-wrapper']}>
             <Row gutter={[12,12]}>
-                {emojiArr.map((emoji) => <Col className={styles['emoji-item']} onClick={()=>handleClick(emoji)}>{emoji}</Col>)}
+                {emojiArr.map((emoji) => <Col key={emoji + Math.random()} className={styles['emoji-item']} onClick={()=>handleClick(emoji)}>{emoji}</Col>)}
             </Row>
         </div>
     );

@@ -23,10 +23,6 @@ const Header: React.FC  = () => {
     ];
 
     const history = useHistory();
-    useEffect(()=> {
-        console.log(history,"history");
-        
-    },[])
     const handlePush = (path:string) => {
         history.push(path);
     }

@@ -1,3 +1,8 @@
+@headerHeight: 60px;
+@m_raadius: 20px;
+@W_with: 1024px;
+@h_height: 640px;
+
 .feeds-page {
     display: flex;
     flex-direction: column;
@@ -6,8 +11,223 @@
     padding-top: 88px;
     min-height: 100vh;
     width: 100vw;
-    min-width: 960px;
     max-width: 100%;
-    background: #fff;
-    
+    background: rgb(238, 241, 248);
+
+    .wrapper {
+        width: 80%;
+        min-width: @W_with;
+        max-width: 1280px;
+        height: @h_height;
+        min-height: @h_height;
+        border-radius: 20px;
+        background-color: #fff;
+        box-shadow: 4px 4px #eee;
+
+        .header {
+            // background-color: red;
+            width: 100%;
+            height: @headerHeight;
+            border-bottom: .5px solid rgba(0, 0, 0, .08);
+            padding: 10px 0 0 10px;
+            display: flex;
+            justify-content: space-between;
+
+            .tab-item {
+                padding: 0 10px;
+                color: #ff2442;
+                font-weight: 900;
+                border-bottom: 4px solid red;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+        }
+
+        .upload-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: calc(100% - @headerHeight);
+            padding-top: 20px;
+
+            .upload-wrapper {
+                width: 90%;
+                height: 70%;
+
+                .uploadBtn {
+                    width: @W_with * 0.9;
+                    height: 392px;
+
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+
+                    border: .5px dashed gray;
+
+                    :global {
+                        .ant-btn {
+                            margin-top: 12px;
+                            border-radius: 8px;
+                            height: 40px;
+                            line-height: 40px;
+                            padding: 0 20px;
+                            background-color: #ff2442;
+                            color: #fff;
+                        }
+                    }
+
+                }
+
+                .uploadBtn:hover {
+                    border-color: #5d96df;
+                }
+            }
+
+            .tips {
+                padding-top: 10px;
+                width: 90%;
+                display: flex;
+                flex-direction: row;
+
+                .tip {
+                    padding-top: 20px;
+
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+
+                    font-size: 12px;
+                    color: #8c8c8c;
+
+                    border: .5px solid #cccccc;
+                    border-radius: 4px;
+                    margin-left: 8px;
+                    height: 130px;
+
+                    span {
+                        line-height: 20px;
+                    }
+
+                    :first-child {
+                        font-size: 14px;
+                        color: #333;
+                    }
+                }
+
+                :first-child {
+                    margin-left: 0;
+                }
+            }
+        }
+
+        .edit-wrapper {
+            position: absolute;
+            top: @headerHeight + 28px;
+            display: flex;
+            flex-direction: column;
+            width: 80%;
+            min-width: @W_with;
+            min-height: @h_height;
+            padding-top: 20px;
+            // background-color: rgba(106, 150, 246, 0.8);
+            background-color: #fff;
+            visibility: hidden;
+
+            .img-edit-wrapper {
+                padding: 10px 20px;
+                .img-edit-header {
+                    height: 40px;
+                    font-size: 16px;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: baseline;
+                    margin: 0 0 10px 20px;
+                    
+                    .addImgBtn {
+                        margin-left: 18px;
+                        color: #5d96df;
+                        font-size: 12px;
+                        cursor: pointer;
+                    }
+                }
+                .img-edit {
+                    display: flex;
+                    flex-direction: row;
+
+                    .img-wrapper {
+                        position: relative;
+                        width: 120px;
+                        height: 160px;
+                        background-color: #ffffff;
+                        margin-left: 10px;
+
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        overflow: hidden;
+                        border: .5px solid #d7d7d7;
+                        border-radius: 6px;
+
+                        img {
+                            width: 100%;
+                            height: 100%;
+                            object-fit: contain;
+                        }
+
+                        .close {
+                            position: absolute;
+                            top:0;
+                            left: calc(100% - 20px);
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            width: 20px;
+                            height: 20px;
+                            color: #fff;
+                            font-size: 18px;
+                            background-color: rgba(0, 0, 0, .5);
+                            visibility: hidden;
+                            cursor: pointer;
+                        }
+                        .edit-btn {
+                            position: absolute;
+                            top: calc(100% - 20px);
+                            height: 24px;;
+                            width: 100%;
+                            color: #fff;
+                            font-size: 12px;
+                            font-weight: 500;
+                            background-color: rgba(0, 0, 0, .5);
+                            visibility: hidden;
+                            cursor: pointer;
+                        }
+                    }
+                    .img-wrapper:hover {
+                        .close, .edit-btn {
+                            visibility: visible;
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+}
+.editor-modal {
+    :global {
+        
+        .ant-modal-content {
+            border-radius: 10px;
+            .ant-modal-body {
+                min-width: 900px;
+                min-height: 472px;
+            }
+        }
+    }
 }

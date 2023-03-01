@@ -15,6 +15,7 @@ const RouterPage:React.FC = () => {
                             <Switch>
                                 <Route path='/create' component={CreatePage} />
                                 <Route path='/explore' component={Main} />
+                                <Route path='/follow' component={FollowPage} />
                                 <Redirect to="/explore" />
                             </Switch>
                         </Layout>

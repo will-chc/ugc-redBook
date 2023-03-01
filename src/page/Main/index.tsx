@@ -164,7 +164,6 @@ const Main: React.FC = () => {
     const { email, password } = getFieldsValue();
     console.log(email, password);
     setILogin(true);
-
   }
 
   // style
@@ -192,6 +191,7 @@ const Main: React.FC = () => {
               onCancel={handleCancel}
               footer={null}
               width={800}
+              wrapClassName={styles['main-modal']}
             >
               <NoteProvider value={curData}>
                 <NoteContent data={data} />
@@ -207,7 +207,9 @@ const Main: React.FC = () => {
               footer={null}
               width={680}
               open={!isLogin}
+              onCancel={() => setILogin(true)}
               className={styles['login-box']}
+              wrapClassName={styles['main-modal']}
             >
               <div className={styles['left']}>
                 <div className={styles['smile']}>
