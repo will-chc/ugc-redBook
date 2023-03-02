@@ -1,13 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>UGC 内容平台</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UGC 内容平台</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="text/javascript">
+    window._AMapSecurityConfig = {
+      securityJsCode: '5adcc22e17c1dc8af04170a33d79776e',
+    }
+  </script>
+  <script type="text/javascript"
+    src="https://webapi.amap.com/maps?v=1.4.15&key=b87beff3c8d5332a7974de154e8db2a0&&plugin=AMap.Geocoder,AMap.PlaceSearch"></script>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

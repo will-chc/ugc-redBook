@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import { HeartOutlined, HeartTwoTone } from '@ant-design/icons';
 import styles from './note.module.less';
 import { Modal } from "antd";
@@ -26,19 +26,25 @@ const NoteItem: React.FC<FCprops> = ({ item, showDetail }) => {
 
     const { note_card } = item
     const [like, setLike] = useState(note_card.liked_info.liked);
+    const [aspectRatio, setAspectRatio ] = useState(4/3); 
 
     // function
     const clickCover = (e: React.MouseEvent) => {
         e.preventDefault();
         showDetail();
     }
+    useEffect(()=>{
+        const img = new Image();
+        img.src = note_card.cover;        
+        setAspectRatio(img.naturalWidth/img.naturalHeight);
+    },[item])
     return (
         <section className={styles['note-item']}>
             <span className={styles['cover']}
                 onClick={clickCover}
                 style={
                     {
-                        height: item.type == "1" ? 266 : 150,
+                        height: aspectRatio < 1 ? 266 : 150,
                         background: `url('${note_card.cover}') left top 100% / 100% no-repeat`
                     }}
             >

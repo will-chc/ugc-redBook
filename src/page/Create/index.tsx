@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from './index.module.less';
 import { Upload, Button, UploadFile, message, Progress, Modal, } from "antd";
 import { MyIcon } from "../../Icon/MyIcon";
 import { RcFile } from "antd/lib/upload";
 import ImgEditor from "../../components/ImgEditor";
+import TextEditor from "./components/TextEditor";
+import Preview from "../../components/PreView";
 const CreatePage: React.FC = () => {
     const tips = [
         ['图片大小', '支持上传的图片大小，', '最大5M的图片文件'],
@@ -36,8 +38,10 @@ const CreatePage: React.FC = () => {
     }
     const handleAddUploadChange = (info: any) => {
         const { fileList } = info;
-
-        if (fileList.every((e: any) => e.status === 'done')) {
+        console.log(fileList);
+        console.log(fileList.every((e: any) => e.status === 'done'));
+        
+        if (fileList.every((e: any) => e.status === 'done')) {            
             const arr = fileList.map((e: any) => e.response.src);
             setImgArr([...imgArr, ...arr]);
         }
@@ -52,10 +56,9 @@ const CreatePage: React.FC = () => {
         setIsEdit(true);
     }
     const delImg = (i: number) => {
-        if(imgArr.length == 1) 
-        {
+        if (imgArr.length == 1) {
             message.error('必须要有一张图片');
-            return ;
+            return;
         }
         imgArr.splice(i, 1);
         setImgArr([...imgArr]);
@@ -96,40 +99,50 @@ const CreatePage: React.FC = () => {
                             })}
                         </div>
                     </div>
-                    <div className={styles['edit-wrapper']} style={{ visibility: (isEdit ? "visible" : "hidden") }}>
-                        <div className={styles['img-edit-wrapper']}>
-                            <div className={styles['img-edit-header']}>
-                                图片编辑
-                                <Upload
-                                    showUploadList={false}
-                                    action='http://localhost:5000/uploadImg'
-                                    onChange={handleAddUploadChange}
-                                    multiple
-                                    defaultFileList={fileList_}
-                                    beforeUpload={beforeUpload}
-                                    maxCount={addCount}
-                                >
-                                    <span className={styles['addImgBtn']}>添加图片</span>
-                                </Upload>
-                            </div>
-                            <div className={styles['img-edit']}>
-                                {imgArr.map((imgSrc, i) => {
-                                    return (
-                                        <div className={styles['img-wrapper']} key={imgSrc + i}>
-                                            <img src={imgSrc} width={120} />
-                                            <span
-                                                onClick={() => delImg(i)}
-                                                className={styles['close']}>
-                                                x
-                                            </span>
-                                            <span className={styles['edit-btn']} onClick={() => setIsImgEditorOpen(true)}>编辑</span>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
+                            <div className={styles['edit-wrapper']} style={{ visibility: (isEdit ? "visible" : "hidden") }}>
 
-                    </div>
+                                {/* 图片编辑 */}
+
+                                <div className={styles['img-edit-wrapper']}>
+                                    <div className={styles['img-edit-header']}>
+                                        图片编辑
+                                        <Upload
+                                            showUploadList={false}
+                                            action='http://localhost:5000/uploadImg'
+                                            onChange={handleAddUploadChange}
+                                            multiple
+                                            defaultFileList={fileList_}
+                                            beforeUpload={beforeUpload}
+                                            maxCount={addCount}
+                                        >
+                                            <span className={styles['addImgBtn']}>添加图片</span>
+                                        </Upload>
+                                    </div>
+                                    <div className={styles['img-edit']}>
+                                        {imgArr.map((imgSrc, i) => {
+                                            return (
+                                                <div className={styles['img-wrapper']} key={imgSrc + i}>
+                                                    <img src={imgSrc} width={120} />
+                                                    <span
+                                                        onClick={() => delImg(i)}
+                                                        className={styles['close']}>
+                                                        x
+                                                    </span>
+                                                    <span className={styles['edit-btn']} onClick={() => setIsImgEditorOpen(true)}>编辑</span>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                                <div className={styles['text-edit-wrapper']}>
+                                    <div className={styles['text-edit-header']}>
+                                        内容编辑
+                                    </div>
+                                    <TextEditor cover={imgArr[0]}/>
+                                  
+                                </div>
+                            </div>
+                        )
                 </div>
             </div>
             {isImgEditorOpen
@@ -142,7 +155,7 @@ const CreatePage: React.FC = () => {
                         wrapClassName={styles['editor-modal']}
                         width={900}
                     >
-                        <ImgEditor imgArr={imgArr} setImgArr={setImgArr} setIsImgEditorOpen = {setIsImgEditorOpen}/>
+                        <ImgEditor imgArr={imgArr} setImgArr={setImgArr} setIsImgEditorOpen={setIsImgEditorOpen} />
                     </Modal>
                 ) : null
             }
