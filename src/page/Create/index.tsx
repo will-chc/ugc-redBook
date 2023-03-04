@@ -6,6 +6,9 @@ import { RcFile } from "antd/lib/upload";
 import ImgEditor from "../../components/ImgEditor";
 import TextEditor from "./components/TextEditor";
 import Preview from "../../components/PreView";
+//action
+import { useSelector } from "react-redux";
+
 const CreatePage: React.FC = () => {
     const tips = [
         ['图片大小', '支持上传的图片大小，', '最大5M的图片文件'],
@@ -21,6 +24,11 @@ const CreatePage: React.FC = () => {
     const [fileList_, setFileList_] = useState<RcFile[]>();
     const [addCount, setAddCount] = useState((maxImgCount - imgArr.length) > 0 ? (maxImgCount - imgArr.length) : 1);
     const [isImgEditorOpen, setIsImgEditorOpen] = useState(false);
+
+    const state = useSelector((store:any)=>({
+        text:store.textState,
+        address:store.mapState
+    }));
 
     // functon 
     const handleUploadChange = (info: any) => {
@@ -62,6 +70,16 @@ const CreatePage: React.FC = () => {
         }
         imgArr.splice(i, 1);
         setImgArr([...imgArr]);
+        
+    }
+
+    const handleSubmit = () => {
+        const param = {
+            imgArr,
+            ...state
+        };
+        console.log('params',param);
+                
     }
 
     return (
@@ -160,9 +178,10 @@ const CreatePage: React.FC = () => {
                 ) : null
             }
 
-
+            <Button onClick={handleSubmit}>确认</Button>
         </>
     );
 };
+
 
 export default CreatePage;

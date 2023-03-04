@@ -5,13 +5,27 @@ import EmojiInput from "../../../../components/EmojiInput";
 import UAMap from "../../../../components/UAMap";
 import { MyIcon } from "../../../../Icon/MyIcon";
 import Preview from "../../../../components/PreView";
+//action
+import { changeContent,changeTitle } from "../../reducer/actions";
+import { connect } from "react-redux";
+const mapStateToProps = (state: any) => ({
+    title: state.textState.title,
+    content: state.textState.content
+  });
+  const mapDispatchToProps = {
+    changeTitle,
+    changeContent
+  }
+
 
 interface FCprops {
-    cover:string
+    cover:string,
+    changeTitle:(title:string|undefined) => any;
+    changeContent:(content:string|undefined) => any;
 }
 const FormItem = Form.Item;
 
-const TextEditor: React.FC <FCprops>= ({cover}) => {
+const TextEditor: React.FC <FCprops>= ({cover,changeContent,changeTitle}) => {
     const [form] = Form.useForm();
 
     const [isEmojiShow, setIsEmojiShow] = useState(false);
@@ -20,7 +34,12 @@ const TextEditor: React.FC <FCprops>= ({cover}) => {
 
     const [mapOpen, setMapOpen] = useState(false);
 
-    const [title, setTitle] = useState<string | undefined>();
+    
+    const [address, setAddress] = useState({
+        lng: 113.298338,
+        lat: 23.135697,
+        name: '广工大宿舍'
+    });
 
     const handleOpenEmojiChange = (open: boolean) => {
         setIsEmojiShow(open);
@@ -39,7 +58,11 @@ const TextEditor: React.FC <FCprops>= ({cover}) => {
     }
     const handleTitleChange = (e:React.ChangeEvent<HTMLInputElement>) =>{
         const {value} = e.target;
-        setTitle(value)
+        changeTitle(value);
+    }
+    const handleContentChange = (e:React.ChangeEvent<HTMLTextAreaElement>) => {
+        const {value} =  e.target;
+        changeContent(value);
     }
     return (
         <div className={styles['text-wrapper']}>
@@ -52,7 +75,7 @@ const TextEditor: React.FC <FCprops>= ({cover}) => {
                 <FormItem name='content' label='内容'  rules={[
                     {validator:validator}
                 ]}>
-                    <Input.TextArea rows={4} placeholder='描写更多的信息，让更多人看到你吧' />
+                    <Input.TextArea rows={4} placeholder='描写更多的信息，让更多人看到你吧' onChange={handleContentChange}/>
                 </FormItem>
                 <div className={styles['btns']}>
                     <span onClick={()=>addContent("#")}># 话题</span>
@@ -83,9 +106,10 @@ const TextEditor: React.FC <FCprops>= ({cover}) => {
                     <UAMap open={mapOpen} setOpen={setMapOpen} />
                 </div>
             </Form>
-            <div className={styles['preview']}><Preview cover={cover} title={title} /></div>
+            {/* <div className={styles['preview']}><Preview cover={cover} title={title} /></div> */}
         </div>
     );
 };
 
-export default TextEditor;
+// export default TextEditor;
+export default connect(mapStateToProps, mapDispatchToProps)(TextEditor);

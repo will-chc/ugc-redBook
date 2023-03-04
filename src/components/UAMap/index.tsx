@@ -2,19 +2,36 @@ import { Input, Modal, Select } from "antd";
 import React, { useEffect, useState } from "react";
 import { Map, Marker } from 'react-amap';
 import styles from './index.module.less';
-import AMapLoader from "@amap/amap-jsapi-loader";
+import { throttle } from "../../utils/common";
+import { loadPlugin } from "./utils/loadPlugin";
+
+
+//actions
+import { changeAddress } from "./reducer/actions";
+import { connect, Connect } from "react-redux";
+const mapStateToprops = (store: any)=>({
+    address:store.mapState.address
+});
+const mapDispatchToProps = {
+    changeAddress
+}
 interface FCprops {
     open: boolean,
-    setOpen: (open: boolean) => void
+    setOpen: (open: boolean) => void,
+    changeAddress:(address:any) => any
 }
 const { AMap } = window;
-const UAMap: React.FC<FCprops> = ({ open, setOpen }) => {
+const UAMap: React.FC<FCprops> = ({ open, setOpen,changeAddress }) => {
+
+    // AMap Plugin
+    let placeSearch:any;
 
     const [center, setCenter] = React.useState({
         lng: 113.298338,
         lat: 23.135697,
         name: '广工大宿舍'
     });
+    
 
     //暂存搜索项列表
     const [pois, setPois] = useState<any[]>([]);
@@ -25,14 +42,20 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen }) => {
         city: '广州' // 初始城市，如果citylimit: true,那就限定在改城市内搜索
     }
     useEffect(() => {
-        console.log(pois);
+        loadPlugin('AMap.PlaceSearch', () => {
+            placeSearch = new AMap.PlaceSearch({
+                input: 'tipinput',
+                ...searchConfig
+            })
+        });
+        changeAddress(center);
 
-    }, [pois])
+    }, []);
 
     const mapEvent = {
         //点击获取地图经纬度和地标名称
         click: ({ lnglat: { lat, lng } }) => {
-            AMap.plugin('Amap.Geocoder', () => {
+            loadPlugin('Amap.Geocoder', () => {
                 const geocoder = new AMap.Geocoder({
                     city: '广州',
                     citylimit: false
@@ -41,10 +64,11 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen }) => {
                     console.log(status, result);
 
                     if (status == 'complete' && result.info === 'OK') {
-                        console.log(lng, lat, result?.regeocode?.formattedAddress);
-                        setCenter({
+                        const address = {
                             lng, lat, name: result?.regeocode?.formattedAddress
-                        })
+                        }
+                        setCenter(address);
+                        changeAddress(address)
                     }
                 })
             });
@@ -53,24 +77,30 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen }) => {
     const handleSearch = (val: string, isFocus = false) => {
 
         if (isFocus && pois.length) return;
+        // 节流 
+        if (val === '深圳') {
+            searchPlace(val)
+        }
+    }
 
-        const place = new AMap.PlaceSearch(searchConfig);
-        place.search(val, (status: string, result: any) => {
+    const searchPlace = (val: string) => {
+        if(!placeSearch) return
+        placeSearch.search(val, (status: string, result: any) => {
             const { info, poiList } = result;
             console.log(result);
 
             if (status == 'complete' && result.info === 'OK') {
-                console.log(poiList);
 
                 if (poiList.pois && Array.isArray(poiList.pois)) {
-                    console.log(poiList.pois);
                     setPois([...poiList.pois]);
+                    console.log("更新");
                 }
             }
         });
     }
 
-    const hanldeChange = (id: string) => {
+
+    const handleChange = (id: string) => {
         console.log(11111);
 
         const signAddList = pois?.find(item => item.id === id);
@@ -95,17 +125,19 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen }) => {
                 <Select
                     showSearch
                     className={styles['select']}
-                    placeholder='选择地址'
                     value={center.name}
+                    placeholder='选择地址'
+                    defaultActiveFirstOption={false}
+                    showArrow={false}
+                    filterOption={false}
                     onSearch={handleSearch}
-                    onChange={hanldeChange}
-                >
-                    {pois.map(op => {
-                        return (
-                            <Select.Option key={op.id} value={op.id}>{op.name}</Select.Option>
-                        )
-                    })}
-                </Select>
+                    onChange={handleChange}
+                    notFoundContent={null}
+                    options={(pois || []).map(p => ({
+                        value: p.id,
+                        label: p.name,
+                    }))}
+                />
             </div>
             <div className={styles['AMap-wrapper']}>
                 <Map key='12dd575d65937dd7a2a741cb27372852'
@@ -123,15 +155,6 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen }) => {
                                 created: () => {
                                     let auto;
                                     let placeSearch: any;
-                                    // 异步加载AMap.Autocomplete插件：输入提示，根据输入关键字提示匹配信息
-                                    AMap.plugin('AMap.Autocomplete', () => {
-                                        auto = new AMap.Autocomplete({
-                                            input: 'tipinput',
-                                            outPutDirAuto: true,
-                                            ...searchConfig
-                                        })
-                                    })
-                                    // 异步加载AMap.PlaceSearch插件：地点搜索服务插件，提供某一特定地区的位置查询服务
                                     AMap.plugin('AMap.PlaceSearch', () => {
                                         placeSearch = new AMap.PlaceSearch({
                                             input: 'tipinput',
@@ -151,4 +174,5 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen }) => {
     )
 }
 
-export default UAMap;
+// export default UAMap;
+export default connect(mapStateToprops, mapDispatchToProps)(UAMap);
