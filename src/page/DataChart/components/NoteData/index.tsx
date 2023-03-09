@@ -32,7 +32,7 @@ const NoteData: React.FC = () => {
     ];
     const getData = () => {
         if(activedKey == 'views')
-        return [10086, 998, 1212, 111, 508, 991];
+        return [10086, 998, 1212, 111, 508, 991,1000];
         return [5, 20, 36, 10, 10, 20, 5];
     }
 
@@ -90,7 +90,18 @@ const Chart:React.FC<chartFC>= ({data, label}) => {
           {
             name: label,
             type: "line",
-            data
+            data,
+            lineStyle: {
+                color: '#ff4684',
+                width: 4,
+            },
+            symbol: 'circle',
+            symbolSize: 10 ,// 设置点的大小为10
+            itemStyle: {
+                color: '#fff', // 设置点的颜色为红色
+                borderWidth: 2, // 设置点的边框宽度为2
+                borderColor: '#ff4684', // 设置点的边框颜色为黄色
+            }
           },
         ],
       };
