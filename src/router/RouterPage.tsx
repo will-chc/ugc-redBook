@@ -1,9 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Redirect, Route, Switch } from "react-router-dom";
 import Main from "../page/Main";
-import FollowPage from "../page/Follow";
 import CreatePage from '../page/Create';
+import DataChart from '../page/DataChart';
 import Layout from "../components/Layout";
+import UserPage from '../page/UserPage';
 const RouterPage:React.FC = () => {
     return (
         <Router>
@@ -15,7 +16,8 @@ const RouterPage:React.FC = () => {
                             <Switch>
                                 <Route path='/create' component={CreatePage} />
                                 <Route path='/explore' component={Main} />
-                                <Route path='/follow' component={FollowPage} />
+                                <Route path='/user_page' component={UserPage} />
+                                <Route path='/data_viewing' component={DataChart} />
                                 <Redirect to="/explore" />
                             </Switch>
                         </Layout>

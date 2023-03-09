@@ -9,8 +9,8 @@ import { loadPlugin } from "./utils/loadPlugin";
 //actions
 import { changeAddress } from "./reducer/actions";
 import { connect, Connect } from "react-redux";
-const mapStateToprops = (store: any)=>({
-    address:store.mapState.address
+const mapStateToprops = (store: any) => ({
+    address: store.mapState.address
 });
 const mapDispatchToProps = {
     changeAddress
@@ -18,20 +18,20 @@ const mapDispatchToProps = {
 interface FCprops {
     open: boolean,
     setOpen: (open: boolean) => void,
-    changeAddress:(address:any) => any
+    changeAddress: (address: any) => any
 }
 const { AMap } = window;
-const UAMap: React.FC<FCprops> = ({ open, setOpen,changeAddress }) => {
+const UAMap: React.FC<FCprops> = ({ open, setOpen, changeAddress }) => {
 
     // AMap Plugin
-    let placeSearch:any;
+    let placeSearch: any;
 
     const [center, setCenter] = React.useState({
         lng: 113.298338,
         lat: 23.135697,
         name: '广工大宿舍'
     });
-    
+
 
     //暂存搜索项列表
     const [pois, setPois] = useState<any[]>([]);
@@ -78,13 +78,14 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen,changeAddress }) => {
 
         if (isFocus && pois.length) return;
         // 节流 
-        if (val === '深圳') {
-            searchPlace(val)
-        }
+        throttleSearch(val)
     }
-
     const searchPlace = (val: string) => {
-        if(!placeSearch) return
+
+        const placeSearch = new AMap.PlaceSearch({
+            input: 'tipinput',
+            ...searchConfig
+        });
         placeSearch.search(val, (status: string, result: any) => {
             const { info, poiList } = result;
             console.log(result);
@@ -98,6 +99,7 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen,changeAddress }) => {
             }
         });
     }
+    const throttleSearch = throttle(searchPlace, 1000);
 
 
     const handleChange = (id: string) => {

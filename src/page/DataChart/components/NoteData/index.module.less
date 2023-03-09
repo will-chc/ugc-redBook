@@ -1,0 +1,64 @@
+.wrapper {
+    padding: 20px 40px;
+
+    .header {
+        display: flex;
+        justify-content: left;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .card-list {
+        display: flex;
+        flex-direction: row;
+
+        margin: 20px 0;
+
+        .card {
+            padding: 10px 20px;
+            width: 20%;
+            height: 88px;
+            margin-right: 10px;
+
+            background-color: #fff;
+            border-radius: 10px;
+
+            cursor: pointer;
+
+            .item {
+                display: flex;
+                justify-content: left;
+                font-size: 17px;
+                color: #61666d;
+                margin-bottom: 4px;
+            }
+
+            .value {
+                display: flex;
+                justify-content: left;
+                font-size: 22px;
+                font-weight: 600;
+            }
+
+        }
+
+        .actived {
+            background: #ff4684;
+            color: #fff;
+            .item {
+                color: #fff;
+            }
+        }
+
+        :last-child {
+            margin-right: 0;
+        }
+    }
+
+    .chart {
+        width: 100%;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 10px;
+    }
+}
