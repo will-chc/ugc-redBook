@@ -18,7 +18,7 @@ const Header: React.FC  = () => {
         },
         {
             label:"个人主页",
-            path:'/user_page'
+            path:'/user_page/1155555'
         }
     ];
 
