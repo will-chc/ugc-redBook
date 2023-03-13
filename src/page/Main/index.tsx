@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styles from "./index.module.less"
 import NoteItem from "../../components/NoteItem";
 import { Modal, Form, Input, Button } from 'antd';
@@ -8,74 +8,44 @@ import { MyIcon } from "../../Icon/MyIcon";
 import { EmailReg, PasswordReg } from "../../utils/regex";
 // context 
 import { NoteContext } from "../../Context";
+import request from "../../server/request";
 
 
-interface IFNoteItem {
+interface noteCard {
   id: string,
-  type: string,
-  note_card: {
-    cover: string,
-    title: string,
-    user: {
-      nick_name: string,
-      avatar: string,
-      userId: string
-    },
-    liked_info: {
-      liked: boolean,
-      liked_count: string
-    }
+  user_id: string,
+  title: string,
+  cover_image: string,
+  userInfo: {
+    nickName: string,
+    avatar: string
   }
 }
 const FormItem = Form.Item;
 
+const H1 = 266, H2 = 150;
+
 const Main: React.FC = () => {
 
-  // 示例数据
-  const data = {
-    id: '63e4f47a0000000004006523',
-    type: '2',
-    note_card: {
-      cover: 'https://sns-img-hw.xhscdn.com/00c73e32-22ad-c0a2-9898-3a36b977116c',
-      title: '30岁未婚独居，一定要让自己有个温馨的小家',
-      user: {
-        nick_name: '王小仙',
-        avatar: 'https://sns-avatar-qc.xhscdn.com/avatar/616e2c9c38d73a10f960b967.jpg?imageView2/2/w/540/format/webp',
-        userId: '5ba715bd4610d200015b901a'
-      },
-      liked_info: {
-        liked: false,
-        liked_count: '1k+'
-      }
-    }
-  }
-  const data2 = {
-    id: '63e4f47a0000000004006523',
-    type: '1',
-    note_card: {
-      cover: 'https://sns-img-hw.xhscdn.com/9040ca79-22fb-14ea-43f0-401ab1088c75?imageView2/2/w/648/format/webp',
-      title: '30岁未婚独居，一定要让自己有个温馨的小家',
-      user: {
-        nick_name: '王小仙',
-        avatar: 'https://sns-avatar-qc.xhscdn.com/avatar/616e2c9c38d73a10f960b967.jpg?imageView2/2/w/540/format/webp',
-        userId: '5ba715bd4610d200015b901a'
-      },
-      liked_info: {
-        liked: false,
-        liked_count: '1k+'
-      }
-    }
-  }
-
+  const topArr: number[] = [0, 0, 0, 0, 0];
 
   const [form] = Form.useForm();
 
   // state
-  const [curData, setaCurData] = useState(data); // 当前详情数据
+  const [curData, setaCurData] = useState<noteCard>({
+    id: '',
+    user_id: '',
+    title: '',
+    cover_image: '',
+    userInfo: {
+      nickName: '',
+      avatar: ''
+    }
+  }); // 当前详情数据
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [arr, setArr] = useState([...new Array(20).fill(data), ...new Array(15).fill(data2)]);
+  const [arr, setArr] = useState<noteCard[]>([]);
 
   const [loginBtn, setLoginBtn] = useState(true);
 
@@ -83,11 +53,33 @@ const Main: React.FC = () => {
 
   const [isLogin, setILogin] = useState(Boolean(localStorage.getItem('token')));
 
+  const [page, setPage] = useState(1);
 
+  const [hasNextPage, setHasNextPage] = useState(true);
+
+  const [column, setColumn] = useState(5);
+
+  const [initLeft, setInitLeft] = useState(42);
+
+  const pageRef = useRef<HTMLDivElement>(null);
 
   //context
   const NoteProvider = NoteContext.Provider;
-  // 
+
+  // window.addEventListener('resize', ()=> {
+    
+  //   if(window.innerWidth >= 1280) setColumn(5)
+  //   if(window.innerWidth< 1280) setColumn(4);
+  // });
+
+  useEffect(() => {
+    // 请求数据
+    request('/note_list', { page }).then((res: any) => {
+      const { resultList, hasNextPage } = res;
+      setArr(resultList);
+      setHasNextPage(hasNextPage);
+    });
+  }, []);
   useEffect(() => {
     // 监听滚动
     document.addEventListener('scroll', loadNext);
@@ -103,18 +95,24 @@ const Main: React.FC = () => {
   };
   // 滚动加载
   const loadNext = () => {
+    if (!hasNextPage) return;
     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
     const clientHeight = document.documentElement.clientHeight;
     const scrollHeight = document.documentElement.scrollHeight;
-    if (scrollTop + clientHeight + 400 >= scrollHeight) {
-      let newArr = new Array(10).fill(data);
-      const A = [...arr, ...newArr];
-      setArr(A);
+    if (scrollTop + clientHeight + 600 >= scrollHeight) {
+      // 请求数据
+      request('/note_list', { page: page + 1 }).then((res: any) => {
+        const { resultList, hasNextPage } = res;
+        setHasNextPage(hasNextPage);
+        const newArr = [...arr, ...resultList];
+        setArr(newArr);
+        setPage(page + 1);
+      });
     }
   }
 
   //查看详细笔记
-  const showDetail = (item: IFNoteItem) => {
+  const showDetail = (item: any) => {
     setaCurData(item);
     setIsModalOpen(true);
   };
@@ -162,8 +160,22 @@ const Main: React.FC = () => {
   const handleLogin = () => {
     const { getFieldsValue } = form;
     const { email, password } = getFieldsValue();
-    console.log(email, password);
-    setILogin(true);
+    request('/login', { email, password }, 'post').then((res: any) => {
+      const { token, user } = res;
+      localStorage.setItem('token', token);
+      localStorage.setItem('userId', user.id);
+      setILogin(true);
+    })
+  }
+
+  //register
+  const handleRegister = () => {
+    const { getFieldsValue } = form;
+    const { email, password } = getFieldsValue();
+    request('/register', { email, password }, "post").then(res => {
+      // 登录
+      setMode('signUp');
+    });
   }
 
   // style
@@ -172,15 +184,30 @@ const Main: React.FC = () => {
     return "";
   }
 
+  const getTop = (i: number, col: number, item: noteCard) => {
+    const top = topArr[col];
+    const img = new Image();
+    img.src = item.cover_image;
+    const aspectRatio = img.naturalWidth / img.naturalHeight;
+    topArr[col] += (aspectRatio < 1 ? H1 : H2) + 100;
+    return top;
+  }
+
+
 
   return (
     <>
-      <div className={styles['feeds-page']}>
-        <ul>
-          {arr.map((item) => {
-            return <NoteItem key={item.id + Math.random()} item={item} showDetail={() => showDetail(item)} />
-          })}
-        </ul>
+      <div className={styles['feeds-page']} ref={pageRef}>
+        {arr.map((item, i) => {
+          return <div style={{
+            position: "absolute",
+            top: getTop(Math.ceil((i + 1) / column), i% column, item) + 88,
+            left: (i % column) * 240 + 42,
+          }}>
+            <NoteItem key={item.id + Math.random()} item={item} showDetail={() => showDetail(item)} />
+          </div>
+
+        })}
       </div>
       {
         isModalOpen
@@ -193,9 +220,8 @@ const Main: React.FC = () => {
               width={800}
               wrapClassName={styles['main-modal']}
             >
-              <NoteProvider value={curData}>
-                <NoteContent data={data} />
-              </NoteProvider>
+
+              <NoteContent data={curData} />
             </Modal>
           )
           : null
@@ -215,7 +241,7 @@ const Main: React.FC = () => {
                 <div className={styles['smile']}>
                   <MyIcon className={styles['smile-icon']} type='icon-smile-fill' onClick={() => setMode('signIn')} />
                 </div>
-                <div className={styles['register'] +styleControl(styles['register-show'])}>
+                <div className={styles['register'] + styleControl(styles['register-show'])}>
                   <div className={styles['title']}>账号注册</div>
                   <div className={styles['input-container']}>
                     <Form form={form} >
@@ -234,9 +260,9 @@ const Main: React.FC = () => {
                           }
                         ]}
                       >
-                        <Input placeholder="输入密码" />  
+                        <Input placeholder="输入密码" />
                       </FormItem>
-                      <Button disabled={loginBtn} className={styles['button']} onClick={handleLogin} >注册账号</Button>
+                      <Button disabled={loginBtn} className={styles['button']} onClick={handleRegister} >注册账号</Button>
                     </Form>
                   </div>
                   <div className={styles['agreement']}>
@@ -246,10 +272,10 @@ const Main: React.FC = () => {
               </div>
 
               <div className={styles['right']}>
-                <div className={styles['smile-hide'] +styleControl(styles['icon-show'])}>
+                <div className={styles['smile-hide'] + styleControl(styles['icon-show'])}>
                   <MyIcon className={styles['smile-icon']} type='icon-xiaolian' onClick={() => setMode('signUp')} />
                 </div>
-                <div className={styles['login-wrapper'] +styleControl(styles['login-wrapper-hidden'])}>
+                <div className={styles['login-wrapper'] + styleControl(styles['login-wrapper-hidden'])}>
                   <div className={styles['title']}>邮箱登录</div>
                   <div className={styles['input-container']}>
                     <Form form={form} >

@@ -2,66 +2,67 @@ import React, { useEffect, useLayoutEffect, useState } from "react";
 import { HeartOutlined, HeartTwoTone } from '@ant-design/icons';
 import styles from './note.module.less';
 import { Modal } from "antd";
+interface noteCard {
+    id:string,
+    user_id:string,
+    title:string,
+    cover_image:string,
+    userInfo:{
+     nickName:string,
+     avatar:string
+    }
+   }
 interface FCprops {
-    item: {
-        id: string,
-        type: string,
-        note_card: {
-            cover: string,
-            title: string,
-            user: {
-                nick_name: string,
-                avatar: string,
-                userId: string
-            },
-            liked_info: {
-                liked: boolean,
-                liked_count: string
-            }
-        }
-    },
-    showDetail: () => void;
+    item: noteCard,
+    showDetail: () => void,
 }
+
+const H1 = 266, H2=150;
+
 const NoteItem: React.FC<FCprops> = ({ item, showDetail }) => {
 
-    const { note_card } = item
-    const [like, setLike] = useState(note_card.liked_info.liked);
+    const [like, setLike] = useState(false);
     const [aspectRatio, setAspectRatio ] = useState(4/3); 
 
     // function
     const clickCover = (e: React.MouseEvent) => {
         e.preventDefault();
         showDetail();
+    };
+    const getTitle = (title:string) => {
+        if(title.length> 20 ) return title.substring(0,20) + "...";
+        return title;
     }
-    useEffect(()=>{
+    useLayoutEffect(()=>{
         const img = new Image();
-        img.src = note_card.cover;        
+        img.src = item.cover_image;        
         setAspectRatio(img.naturalWidth/img.naturalHeight);
-    },[item])
+    },[]);
     return (
-        <section className={styles['note-item']}>
-            <span className={styles['cover']}
+        <section className={styles['note-item']} >
+            <div className={styles['cover']}
                 onClick={clickCover}
                 style={
                     {
-                        height: aspectRatio < 1 ? 266 : 150,
-                        background: `url('${note_card.cover}') left top 100% / 100% no-repeat`
+                        height: aspectRatio < 1 ? H1 : H2,
+                        background: `url('${item.cover_image}') left top 100% / 100% no-repeat`
                     }}
             >
-            </span>
+                <img src={item.cover_image} />
+            </div>
             <div className={styles['footer']} >
-                <a className={styles['title']}><span>{note_card.title}</span></a>
+                <a className={styles['title']}><span>{getTitle(item.title)}</span></a>
                 <div className={styles['author-wrapper']}>
                     <a className={styles['author']}>
-                        <img src={note_card.user.avatar} alt="" width={20} />
-                        <span className={styles['name']}> {note_card.user.nick_name} </span>
+                        <img src={item.userInfo.avatar} alt="" width={20} />
+                        <span className={styles['name']}> {item.userInfo.nickName} </span>
                     </a>
                     <span className={styles['like-wrapper']} onClick={() => setLike(!like)}>
                         {!like
                             ? (<HeartOutlined className={styles['like']} />)
                             : (<HeartTwoTone twoToneColor='#cf1717' className={styles['like']} />)
                         }
-                        <span>{note_card.liked_info.liked_count}</span>
+                        <span>1</span>
                     </span>
                 </div>
             </div>

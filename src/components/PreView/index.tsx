@@ -29,14 +29,13 @@ const Preview:React.FC <FCprops>= ({cover, title}) => {
         const {note_card} = item 
         if(!title) title = '请先填写标题'
         setItem({...item,note_card:{...note_card,cover,title}});
-        console.log(title);
         
       },[cover,title])
     return (
         <div className={styles['pre-wrapper']}>
             <div className={styles['header']}>预览</div>
             <div className={styles['pre-body']}>
-                <NoteItem item={item} showDetail={()=>console.log(111)}/>
+                {/* <NoteItem item={item} showDetail={()=>console.log(111)}/> */}
             </div>
         </div>
     );

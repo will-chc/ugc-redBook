@@ -1,68 +1,29 @@
-import React, { useState } from "react";
-import { Modal } from "antd";
+import React, { useEffect, useState } from "react";
+import { Divider, Modal } from "antd";
 import styles from './index.module.less';
 import NoteItem from "../../components/NoteItem";
 import NoteContent from "../../components/NoteContent";
 import { NoteContext } from "../../Context";
-const src = 'https://sns-avatar-qc.xhscdn.com/avatar/6222018f9c623248c224cd83.jpg?imageView2/2/w/540/format/webp';
-const id = '188977898499';
-const des = '做一个快乐的人'
+import { useSelector } from "react-redux";
+import request from "../../server/request";
+import { useHistory } from "react-router-dom";
 
-// 示例数据
-const data = {
-    id: '63e4f47a0000000004006523',
-    type: '2',
-    note_card: {
-        cover: 'https://sns-img-hw.xhscdn.com/00c73e32-22ad-c0a2-9898-3a36b977116c',
-        title: '30岁未婚独居，一定要让自己有个温馨的小家',
-        user: {
-            nick_name: '王小仙',
-            avatar: 'https://sns-avatar-qc.xhscdn.com/avatar/616e2c9c38d73a10f960b967.jpg?imageView2/2/w/540/format/webp',
-            userId: '5ba715bd4610d200015b901a'
-        },
-        liked_info: {
-            liked: false,
-            liked_count: '1k+'
-        }
-    }
-}
-const data2 = {
-    id: '63e4f47a0000000004006523',
-    type: '1',
-    note_card: {
-        cover: 'https://sns-img-hw.xhscdn.com/9040ca79-22fb-14ea-43f0-401ab1088c75?imageView2/2/w/648/format/webp',
-        title: '30岁未婚独居，一定要让自己有个温馨的小家',
-        user: {
-            nick_name: '王小仙',
-            avatar: 'https://sns-avatar-qc.xhscdn.com/avatar/616e2c9c38d73a10f960b967.jpg?imageView2/2/w/540/format/webp',
-            userId: '5ba715bd4610d200015b901a'
-        },
-        liked_info: {
-            liked: false,
-            liked_count: '1k+'
-        }
-    }
-}
-interface IFNoteItem {
+const H1 = 266, H2 = 150;
+
+
+interface noteCard {
     id: string,
-    type: string,
-    note_card: {
-        cover: string,
-        title: string,
-        user: {
-            nick_name: string,
-            avatar: string,
-            userId: string
-        },
-        liked_info: {
-            liked: boolean,
-            liked_count: string
-        }
+    user_id: string,
+    title: string,
+    cover_image: string,
+    userInfo: {
+        nickName: string,
+        avatar: string
     }
 }
-//context
-const NoteProvider = NoteContext.Provider;
+
 const UserPage: React.FC = () => {
+
     const tabList = [
         {
             label: '笔记',
@@ -72,30 +33,116 @@ const UserPage: React.FC = () => {
             label: '点赞',
             key: 'likes'
         },
-    ]
+    ];
+    const topArr: number[] = [0, 0, 0, 0, 0];
+
+
+
+    const [userInfo, setUserInfo] = useState({
+        email: "",
+        nickName: '',
+        avatar: '',
+        brief: undefined
+        ,
+    });
+
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [curData, setaCurData] = useState(data); // 当前详情数据
-    const [arr, setArr] = useState([...new Array(20).fill(data), ...new Array(15).fill(data2)]);
+
+    const [column, setColumn] = useState(5);
+
+
+    const [curData, setaCurData] = useState<noteCard>({
+        id: '',
+        user_id: '',
+        title: '',
+        cover_image: '',
+        userInfo: {
+            nickName: '',
+            avatar: ''
+        }
+    });
+    // 当前详情数据
+    const [arr, setArr] = useState<noteCard[]>([]);
+
     const [tab, setTab] = useState('note');
+
+    const [page, setPage] = useState(1);
+
+    const [hasNextPage, setHasNextPage] = useState(true);
+
+
+
+
+    const history = useHistory();
+    const { pathname } = history.location;
+    const queryArr = pathname.split('/');
+    const user_id = queryArr[queryArr.length - 1];
+
+    //动态类名
     const getStyles = (key: string) => {
         if (key === tab) return [styles['tab'], styles['active']].join(" ");
         return styles['tab'];
     }
     //查看详细笔记
-    const showDetail = (item: IFNoteItem) => {
+    const showDetail = (item: noteCard) => {
         setaCurData(item);
         setIsModalOpen(true);
     };
+
+    useEffect(() => {
+
+        request('/userInfo', { user_id }).then((res: any) => {
+            setUserInfo(res);
+        })
+        request('/note_list', { user_id, page }).then((res: any) => {
+            setArr(res.resultList);
+        });
+    }, []);
+    useEffect(() => {
+        // 监听滚动
+        document.addEventListener('scroll', loadNext);
+        return () => {
+            document.removeEventListener("scroll", loadNext);
+        }
+    }, [arr]);
+
+    // 滚动加载
+    const loadNext = () => {
+        if (!hasNextPage) return;
+        const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        const clientHeight = document.documentElement.clientHeight;
+        const scrollHeight = document.documentElement.scrollHeight;
+        if (scrollTop + clientHeight + 600 >= scrollHeight) {
+            // 请求数据
+            request('/note_list', { user_id, page: page + 1 }).then((res: any) => {
+                const { resultList, hasNextPage } = res;
+                setHasNextPage(hasNextPage);
+                const newArr = [...arr, ...resultList];
+                setArr(newArr);
+                setPage(page + 1);
+            });
+        }
+    }
+
+    const getTop = (i: number, col: number, item: noteCard) => {
+        const top = topArr[col];
+        const img = new Image();
+        img.src = item.cover_image;
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        topArr[col] += (aspectRatio < 1 ? H1 : H2) + 100;
+        return top;
+    }
+
     return (
         <div className={styles['feeds-page']}>
             <div className={styles['user']}>
                 <div className={styles['userInfo']}>
                     <div className={styles['user-img']}>
-                        <img src={src} alt="" />
+                        <img src={userInfo.avatar} alt="" />
                     </div>
-                    <div className={styles['user-name']}>小红薯6117C604</div>
-                    <div className={styles['user-id']}>小红书号：{id}</div>
-                    <div className={styles['user-des']}>{des}</div>
+                    <div className={styles['user-name']}>{userInfo.nickName}</div>
+                    <div className={styles['user-id']}>小红书号：{localStorage.getItem('userId')}</div>
+                    <div className={styles['user-des']}>{userInfo.brief ? userInfo.brief : '尚未有简介'}</div>
                     <div className={styles['user-data']}>
                         <div className={styles['item']}>
                             <span className={styles['count']}>32</span>
@@ -122,11 +169,19 @@ const UserPage: React.FC = () => {
                 }
             </div>
             <div className={styles['feeds-page']}>
-                <ul>
-                    {arr.map((item) => {
-                        return <NoteItem key={item.id + Math.random()} item={item} showDetail={() => showDetail(item)} />
-                    })}
-                </ul>
+                {arr.map((item, i) => {
+                    return <div style={{
+                        position: "absolute",
+                        top: getTop(Math.ceil((i + 1) / column), i % column, item) + 88,
+                        left: (i % column) * 240 + 42,
+                    }}>
+                        <NoteItem key={item.id + Math.random()} item={item} showDetail={() => showDetail(item)} />
+                    </div>
+
+                })}
+                {
+                    !hasNextPage && (<div className={styles['bottom']}>已经到底了！</div>)
+                }
             </div>
             {
                 isModalOpen
@@ -139,14 +194,12 @@ const UserPage: React.FC = () => {
                             width={800}
                             wrapClassName={styles['main-modal']}
                         >
-                            <NoteProvider value={curData}>
-                                <NoteContent data={data} />
-                            </NoteProvider>
+                            <NoteContent data={curData} />
                         </Modal>
                     )
                     : null
             }
-        </div>
+        </div >
     );
 };
 

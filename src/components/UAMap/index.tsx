@@ -48,8 +48,6 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen, changeAddress }) => {
                 ...searchConfig
             })
         });
-        changeAddress(center);
-
     }, []);
 
     const mapEvent = {
@@ -61,7 +59,6 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen, changeAddress }) => {
                     citylimit: false
                 });
                 geocoder.getAddress([lng, lat], (status: string, result: any) => {
-                    console.log(status, result);
 
                     if (status == 'complete' && result.info === 'OK') {
                         const address = {
@@ -88,13 +85,11 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen, changeAddress }) => {
         });
         placeSearch.search(val, (status: string, result: any) => {
             const { info, poiList } = result;
-            console.log(result);
 
             if (status == 'complete' && result.info === 'OK') {
 
                 if (poiList.pois && Array.isArray(poiList.pois)) {
                     setPois([...poiList.pois]);
-                    console.log("更新");
                 }
             }
         });
@@ -103,15 +98,15 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen, changeAddress }) => {
 
 
     const handleChange = (id: string) => {
-        console.log(11111);
-
         const signAddList = pois?.find(item => item.id === id);
         if (signAddList) {
-            setCenter({
+            const center = {
                 lng: signAddList?.location.lng,
                 lat: signAddList?.location.lat,
                 name: signAddList?.name
-            });
+            }
+            setCenter(center);
+            changeAddress(center);
         }
     }
 
@@ -119,6 +114,7 @@ const UAMap: React.FC<FCprops> = ({ open, setOpen, changeAddress }) => {
         <Modal
             open={open}
             onCancel={() => setOpen(false)}
+            onOk={()=>setOpen(false)}
             wrapClassName={styles['wrapper']}
             width={648}
             title='选择地址'

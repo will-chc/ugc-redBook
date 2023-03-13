@@ -1,8 +1,28 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
+import request from "../../server/request";
 import styles from './index.module.less'
 
-const Header: React.FC  = () => {
+//action
+import { setUserInfo } from "./reducer/actions";
+import { connect } from "react-redux";
+const mapStateToProps = (state: any) => ({
+    userInfo:state.useInfo
+  });
+  const mapDispatchToProps = {
+    setUserInfo
+  }
+
+interface User_Info {
+    email:string,
+    nickName:string,
+    avatar:string,
+    breif:string | undefined,
+}
+interface FCprops {
+    setUserInfo:(data:User_Info) => any;
+}
+const Header: React.FC<FCprops>  = ({setUserInfo}) => {
     const menu = [
         {
             label:'首页',
@@ -18,10 +38,18 @@ const Header: React.FC  = () => {
         },
         {
             label:"个人主页",
-            path:'/user_page/1155555'
+            path:`/user_page/${localStorage.getItem('userId')}`
         }
     ];
+    const [avatar, setAvatar] = useState<string>('');
 
+    useEffect(()=>{
+        request('/userInfo',{user_id:localStorage.getItem('userId')},"get").then((res:any)=>{
+            const { avatar } = res;
+            setAvatar(avatar);
+            setUserInfo(res);
+        })
+    },[])
     const history = useHistory();
     const handlePush = (path:string) => {
         history.push(path);
@@ -46,7 +74,7 @@ const Header: React.FC  = () => {
                 </div>
                 <div className={styles['user']}>
                     <img className={styles['avatar']}
-                        src='https://sns-avatar-qc.xhscdn.com/avatar/6222018f9c623248c224cd83.jpg?imageView2/2/w/360/format/webp'
+                        src={avatar}
                      />
                 </div>
             </div>
@@ -54,4 +82,4 @@ const Header: React.FC  = () => {
     );
 };
 
-export default Header;
+export default connect(mapStateToProps, mapDispatchToProps)(Header);

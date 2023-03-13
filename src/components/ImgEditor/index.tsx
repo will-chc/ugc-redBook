@@ -70,7 +70,6 @@ const ImgEditor: React.FC<FCprops> = ({ imgArr, setImgArr, setIsImgEditorOpen })
 
     // function
     useEffect(() => {
-        console.log(imageDataArr);
     }, [imageDataArr])
     useEffect(() => {
         if (option == 'cut') handleCanvas();

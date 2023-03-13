@@ -15,7 +15,6 @@ instance.interceptors.request.use(config => {
     // 在请求发送前添加 token
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
-    console.log(userId);
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

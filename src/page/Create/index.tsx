@@ -8,6 +8,8 @@ import TextEditor from "./components/TextEditor";
 import Preview from "../../components/PreView";
 //action
 import { useSelector } from "react-redux";
+import request from "../../server/request";
+import { useHistory } from "react-router-dom";
 
 const CreatePage: React.FC = () => {
     const tips = [
@@ -25,10 +27,11 @@ const CreatePage: React.FC = () => {
     const [addCount, setAddCount] = useState((maxImgCount - imgArr.length) > 0 ? (maxImgCount - imgArr.length) : 1);
     const [isImgEditorOpen, setIsImgEditorOpen] = useState(false);
 
-    const state = useSelector((store:any)=>({
-        text:store.textState,
-        address:store.mapState
+    const state = useSelector((store: any) => ({
+        text: store.textState,
+        address: store.mapState.address
     }));
+    const history = useHistory();
 
     // functon 
     const handleUploadChange = (info: any) => {
@@ -41,27 +44,40 @@ const CreatePage: React.FC = () => {
                 arr.push(response.src);
             }
             setImgArr([...arr]);
-            setAddCount((maxImgCount - arr.length) > 0 ? (maxImgCount - arr.length) : 1)
+            setAddCount((maxImgCount - arr.length) > 0 ? (maxImgCount - arr.length) : 1);
+            const isUploadCompleted = fileList.every((file: any) => file.status === 'done');
+            if (isUploadCompleted) {
+                console.log('所有文件上传完成');
+                setFileList_(fileList);
+                setIsEdit(true);
+            }
         }
     }
     const handleAddUploadChange = (info: any) => {
         const { fileList } = info;
-        console.log(fileList);
-        console.log(fileList.every((e: any) => e.status === 'done'));
-        
-        if (fileList.every((e: any) => e.status === 'done')) {            
+        if (fileList.every((e: any) => e.status === 'done')) {
             const arr = fileList.map((e: any) => e.response.src);
-            setImgArr([...imgArr, ...arr]);
+            const newArr = new Set([...arr]);
+            setImgArr([...newArr]);
         }
     }
 
     const beforeUpload = (file: RcFile, fileList: RcFile[]) => {
-        setFileList_(fileList);
         if (imgArr.length >= 6) {
             message.error('最多上传6张照片');
             return false;
         }
-        setIsEdit(true);
+
+        const timestamp = new Date().getTime(); // 获取当前时间戳
+        const newFilename = `${timestamp}_${file.name}`; // 给文件名加上时间戳
+
+        // 将修改后的文件名赋值回去
+        Object.defineProperty(file, 'name', {
+            writable: true,
+            value: newFilename,
+        });
+
+        return true;
     }
     const delImg = (i: number) => {
         if (imgArr.length == 1) {
@@ -70,7 +86,7 @@ const CreatePage: React.FC = () => {
         }
         imgArr.splice(i, 1);
         setImgArr([...imgArr]);
-        
+
     }
 
     const handleSubmit = () => {
@@ -78,8 +94,10 @@ const CreatePage: React.FC = () => {
             imgArr,
             ...state
         };
-        console.log('params',param);
-                
+        request('/create_note', param, "post").then(res => {
+            message.success('发布成功');
+            history.push(`/user_page/${localStorage.getItem('userId')}`);
+        });
     }
 
     return (
@@ -89,35 +107,42 @@ const CreatePage: React.FC = () => {
                     <header className={styles['header']}>
                         <span className={styles['tab-item']}>上传图文</span>
                     </header>
-                    <div className={styles['upload-area']}>
-                        <div className={styles['upload-wrapper']}>
-                            <Upload
-                                showUploadList={false}
-                                action='http://localhost:5000/uploadImg'
-                                onChange={handleUploadChange}
-                                multiple
-                                beforeUpload={beforeUpload}
-                                maxCount={maxImgCount}
-                            >
-                                <div className={styles['uploadBtn']}>
-                                    <MyIcon style={{ fontSize: 36 }} type="icon-shangchuan" />
-                                    <Button>点击上传</Button>
+                    {
+                        isEdit == false && (
+                            <div className={styles['upload-area']}>
+                                <div className={styles['upload-wrapper']}>
+                                    <Upload
+                                        showUploadList={false}
+                                        action='http://localhost:5000/uploadImg'
+                                        onChange={handleUploadChange}
+                                        multiple
+                                        beforeUpload={beforeUpload}
+                                        maxCount={maxImgCount}
+                                    >
+                                        <div className={styles['uploadBtn']}>
+                                            <MyIcon style={{ fontSize: 36 }} type="icon-shangchuan" />
+                                            <Button>点击上传</Button>
+                                        </div>
+                                    </Upload>
                                 </div>
-                            </Upload>
-                        </div>
-                        <div className={styles['tips']}>
-                            {tips.map((tip) => {
-                                return (
-                                    <div className={styles['tip']} key={tip[0]}>
-                                        <span>{tip[0]}</span>
-                                        <span>{tip[1]}</span>
-                                        <span>{tip[2]}</span>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    </div>
-                            <div className={styles['edit-wrapper']} style={{ visibility: (isEdit ? "visible" : "hidden") }}>
+                                <div className={styles['tips']}>
+                                    {tips.map((tip) => {
+                                        return (
+                                            <div className={styles['tip']} key={tip[0]}>
+                                                <span>{tip[0]}</span>
+                                                <span>{tip[1]}</span>
+                                                <span>{tip[2]}</span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    {
+                        isEdit && (
+                            <div className={styles['edit-wrapper']}>
 
                                 {/* 图片编辑 */}
 
@@ -156,11 +181,12 @@ const CreatePage: React.FC = () => {
                                     <div className={styles['text-edit-header']}>
                                         内容编辑
                                     </div>
-                                    <TextEditor cover={imgArr[0]}/>
-                                  
+                                    <TextEditor cover={imgArr[0]} />
+                                    <Button className={styles['confirm-btn']} onClick={handleSubmit}>确认</Button>
                                 </div>
                             </div>
                         )
+                    }
                 </div>
             </div>
             {isImgEditorOpen
@@ -178,7 +204,6 @@ const CreatePage: React.FC = () => {
                 ) : null
             }
 
-            <Button onClick={handleSubmit}>确认</Button>
         </>
     );
 };
