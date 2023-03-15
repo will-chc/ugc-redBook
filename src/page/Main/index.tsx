@@ -16,6 +16,7 @@ interface noteCard {
   user_id: string,
   title: string,
   cover_image: string,
+  liked:boolean,
   userInfo: {
     nickName: string,
     avatar: string
@@ -37,6 +38,7 @@ const Main: React.FC = () => {
     user_id: '',
     title: '',
     cover_image: '',
+    liked:false,
     userInfo: {
       nickName: '',
       avatar: ''
@@ -67,19 +69,15 @@ const Main: React.FC = () => {
   const NoteProvider = NoteContext.Provider;
 
   // window.addEventListener('resize', ()=> {
-    
+
   //   if(window.innerWidth >= 1280) setColumn(5)
   //   if(window.innerWidth< 1280) setColumn(4);
   // });
 
   useEffect(() => {
-    // 请求数据
-    request('/note_list', { page }).then((res: any) => {
-      const { resultList, hasNextPage } = res;
-      setArr(resultList);
-      setHasNextPage(hasNextPage);
-    });
+    getInitData();
   }, []);
+
   useEffect(() => {
     // 监听滚动
     document.addEventListener('scroll', loadNext);
@@ -90,9 +88,22 @@ const Main: React.FC = () => {
 
 
   // function
+
+    // 获取初始化数据
+  const getInitData = () => {
+      // 请求数据
+    request('/note_list', { page }).then((res: any) => {
+      const { resultList, hasNextPage } = res;
+      setArr(resultList);
+      setHasNextPage(hasNextPage);
+    });
+  }
+
   const handleCancel = () => {
     setIsModalOpen(false);
+    // 更新数据
   };
+
   // 滚动加载
   const loadNext = () => {
     if (!hasNextPage) return;
@@ -201,9 +212,11 @@ const Main: React.FC = () => {
         {arr.map((item, i) => {
           return <div style={{
             position: "absolute",
-            top: getTop(Math.ceil((i + 1) / column), i% column, item) + 88,
+            top: getTop(Math.ceil((i + 1) / column), i % column, item) + 88,
             left: (i % column) * 240 + 42,
-          }}>
+          }}
+          key={item.id + Math.random()} 
+          >
             <NoteItem key={item.id + Math.random()} item={item} showDetail={() => showDetail(item)} />
           </div>
 

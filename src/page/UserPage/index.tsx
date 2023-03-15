@@ -15,6 +15,7 @@ interface noteCard {
     id: string,
     user_id: string,
     title: string,
+    liked:boolean,
     cover_image: string,
     userInfo: {
         nickName: string,
@@ -56,6 +57,7 @@ const UserPage: React.FC = () => {
         user_id: '',
         title: '',
         cover_image: '',
+        liked:false,
         userInfo: {
             nickName: '',
             avatar: ''
@@ -174,7 +176,9 @@ const UserPage: React.FC = () => {
                         position: "absolute",
                         top: getTop(Math.ceil((i + 1) / column), i % column, item) + 88,
                         left: (i % column) * 240 + 42,
-                    }}>
+                    }}
+                    key={item.id + Math.random()}
+                    >
                         <NoteItem key={item.id + Math.random()} item={item} showDetail={() => showDetail(item)} />
                     </div>
 

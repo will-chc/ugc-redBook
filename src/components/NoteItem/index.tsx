@@ -2,11 +2,13 @@ import React, { useEffect, useLayoutEffect, useState } from "react";
 import { HeartOutlined, HeartTwoTone } from '@ant-design/icons';
 import styles from './note.module.less';
 import { Modal } from "antd";
+import request from "../../server/request";
 interface noteCard {
     id:string,
     user_id:string,
     title:string,
     cover_image:string,
+    liked:boolean,
     userInfo:{
      nickName:string,
      avatar:string
@@ -21,7 +23,7 @@ const H1 = 266, H2=150;
 
 const NoteItem: React.FC<FCprops> = ({ item, showDetail }) => {
 
-    const [like, setLike] = useState(false);
+    const [like, setLike] = useState(item.liked);
     const [aspectRatio, setAspectRatio ] = useState(4/3); 
 
     // function
@@ -32,6 +34,12 @@ const NoteItem: React.FC<FCprops> = ({ item, showDetail }) => {
     const getTitle = (title:string) => {
         if(title.length> 20 ) return title.substring(0,20) + "...";
         return title;
+    }
+    const handleLike = () => {
+        request('/like',{note_id:item.id, user_id:localStorage.getItem('userId'), liked:!like},'post').then(res=>{
+            console.log(res);
+            setLike(!like); 
+        })
     }
     useLayoutEffect(()=>{
         const img = new Image();
@@ -57,12 +65,12 @@ const NoteItem: React.FC<FCprops> = ({ item, showDetail }) => {
                         <img src={item.userInfo.avatar} alt="" width={20} />
                         <span className={styles['name']}> {item.userInfo.nickName} </span>
                     </a>
-                    <span className={styles['like-wrapper']} onClick={() => setLike(!like)}>
+                    <span className={styles['like-wrapper']} onClick={handleLike}>
                         {!like
                             ? (<HeartOutlined className={styles['like']} />)
                             : (<HeartTwoTone twoToneColor='#cf1717' className={styles['like']} />)
                         }
-                        <span>1</span>
+                        <span>10k</span>
                     </span>
                 </div>
             </div>

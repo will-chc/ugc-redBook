@@ -8,17 +8,18 @@ import { MyIcon } from "../../Icon/MyIcon";
 import request from "../../server/request";
 
 interface noteCard {
-    id:string,
-    user_id:string,
-    title:string,
-    cover_image:string,
-    userInfo:{
-     nickName:string,
-     avatar:string
+    id: string,
+    user_id: string,
+    title: string,
+    cover_image: string,
+    liked:boolean,
+    userInfo: {
+        nickName: string,
+        avatar: string
     }
-   }
+}
 interface RCprops {
-    data: noteCard 
+    data: noteCard
 }
 const NoteContent: React.FC<RCprops> = ({ data }) => {
     const { userInfo } = data;
@@ -26,11 +27,11 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
     const comments = "即使小米13要卖两年，出13s，也得是明年了";
     let likeCount = 66;
     const list = new Array(6).fill(1);
-    let inputRef:HTMLInputElement | null;
+    let inputRef: HTMLInputElement | null;
 
     // state
     const [cur, setCur] = useState(0);
-    const [liked, setLiked] = useState(false);
+    const [liked, setLiked] = useState(data.liked);
     const [isShow, setIsShow] = useState(false);
     const [placeholder, setPholder] = useState<string | undefined>('请留下有爱的评论吧！');
     const [isEmojiShow, setIsEmojiShow] = useState(false);
@@ -38,16 +39,16 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
     const [hasInput, setHasInput] = useState<string | undefined>("");
 
     const [ImgArr, setImgArr] = useState<string[]>([]);
-    const [note,setNote] = useState({title:'',content:''});
+    const [note, setNote] = useState({ title: '', content: '' });
 
 
-    useEffect(()=>{
-        request('note_detail',{id:data.id}).then((res:any)=>{
-            const {img_arr, title, content} = res;
+    useEffect(() => {
+        request('note_detail', { id: data.id }).then((res: any) => {
+            const { img_arr, title, content } = res;
             setImgArr(img_arr);
-            setNote({title,content});
+            setNote({ title, content });
         })
-    },[])
+    }, [])
     // function 
     const preImg = () => {
         if (cur === 0) {
@@ -79,6 +80,14 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
         setIsShow(false);
     }
     const likeOption = () => {
+        request('/like', {
+            note_id: data.id,
+            user_id: localStorage.getItem('userId'),
+            liked:!liked
+        },"post").then(res=>{
+            console.log(res);
+            
+        })
         setLiked(!liked);
     }
 
@@ -86,25 +95,25 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
         setIsEmojiShow(open);
     }
 
-    const handleInput = ( e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         setComments_(e.target.value);
-        if(e.target.value) {
+        if (e.target.value) {
             setHasInput(styles['hasInput']);
         }
         else {
             setHasInput("");
         }
-             
+
     }
-    const emojiInput = (emoji:string) => {
-        if(comments_){
+    const emojiInput = (emoji: string) => {
+        if (comments_) {
             setComments_(comments_ + emoji);
         }
         else {
             setComments_(emoji);
         }
         setHasInput(styles['hasInput']);
-    } 
+    }
 
     return (
         <>
@@ -173,8 +182,11 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
                 <div className={styles['footer-bar']}>
                     <div className={styles['options']}>
                         <div className={styles['left']}>
-                            <span className={styles['like-wrapper']}>
-                                <MyIcon className={styles['icon']} type="icon-weishoucang" />
+                            <span className={styles['like-wrapper']} onClick={likeOption}>
+                                {liked
+                                    ? (<MyIcon className={styles['icon']} type="icon-aixin" />)
+                                    : (<MyIcon className={styles['icon']} type="icon-weishoucang" />)
+                                }
                                 <span className={styles['count']}>388</span>
                             </span>
                             <span className={styles['collect-wrapper']}>
@@ -191,29 +203,29 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
                         </div>
                     </div>
                     <div className={styles['outer']}>
-                        <div className={styles['input-wrapper'] +" " + hasInput}>
+                        <div className={styles['input-wrapper'] + " " + hasInput}>
                             <input type='text'
                                 className={styles['input']}
                                 placeholder={placeholder}
-                                ref={input => inputRef=input}
+                                ref={input => inputRef = input}
                                 onFocus={() => setPholder(undefined)}
                                 onBlur={() => setPholder('请留下有爱的评论吧！')}
                                 value={comments_}
                                 onChange={handleInput}
                             />
-                            <Popover 
-                            title={null} 
-                            content={<EmojiInput openChang = {handleOpenEmojiChange} emojiInput = {emojiInput}/>} 
-                            trigger='click' 
-                            open={isEmojiShow} 
-                            onOpenChange={handleOpenEmojiChange}>
+                            <Popover
+                                title={null}
+                                content={<EmojiInput openChang={handleOpenEmojiChange} emojiInput={emojiInput} />}
+                                trigger='click'
+                                open={isEmojiShow}
+                                onOpenChange={handleOpenEmojiChange}>
                                 <div className={styles['emoji']} >
                                     <MyIcon type="icon-xiaolian" />
                                 </div>
                             </Popover>
 
                         </div>
-                            <Button className={styles['button']}>发送</Button>
+                        <Button className={styles['button']}>发送</Button>
                     </div>
                 </div>
             </div>
