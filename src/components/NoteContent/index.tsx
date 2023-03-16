@@ -12,7 +12,7 @@ interface noteCard {
     user_id: string,
     title: string,
     cover_image: string,
-    liked:boolean,
+    liked: boolean,
     userInfo: {
         nickName: string,
         avatar: string
@@ -40,13 +40,19 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
 
     const [ImgArr, setImgArr] = useState<string[]>([]);
     const [note, setNote] = useState({ title: '', content: '' });
-
+    const [userId, setUserId] = useState(0);
+    const [isFollowed, setIsFollowed] = useState(false);
 
     useEffect(() => {
-        request('note_detail', { id: data.id }).then((res: any) => {
-            const { img_arr, title, content } = res;
+        request('/note_detail', { id: data.id }).then((res: any) => {
+            const { img_arr, title, content, user_id } = res;
             setImgArr(img_arr);
             setNote({ title, content });
+            setUserId(user_id);
+            request('/isfollow', { followee_id: user_id, follower_id: Number(localStorage.getItem('userId')) }).then((res: any) => {
+                const { isFollowed } = res;
+                setIsFollowed(isFollowed);
+            })
         })
     }, [])
     // function 
@@ -83,10 +89,9 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
         request('/like', {
             note_id: data.id,
             user_id: localStorage.getItem('userId'),
-            liked:!liked
-        },"post").then(res=>{
+            liked: !liked
+        }, "post").then(res => {
             console.log(res);
-            
         })
         setLiked(!liked);
     }
@@ -115,6 +120,30 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
         setHasInput(styles['hasInput']);
     }
 
+    // 关注
+    const handleFollow = (new_follow:boolean) => {
+        request('/follow', {
+            follower_id: Number(localStorage.getItem('userId')),
+            followee_id: userId,
+            new_follow
+        }, 'post').then((res:any) => {
+            const { isFollowed } = res;
+            setIsFollowed(isFollowed);
+        })
+    }
+
+    // tsx
+    const renderFollowerBtn = () => {
+        if (localStorage.getItem('userId') == data.user_id) return null;
+        if (isFollowed) {
+            return <div className = {styles['followed-option']} onClick={()=>handleFollow(false)}>已关注</div>
+        }
+        else {
+            return <div className = {styles['follow-option']} onClick={()=>handleFollow(true)}>关注</div>
+        }
+
+    }
+
     return (
         <>
             <div className={styles['media-wrapper']} onMouseOver={showOption} onMouseOut={hiddenOption}>
@@ -133,102 +162,110 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
                         <img className={styles['avatar']} src={userInfo.avatar} />
                         <span className={styles['name']}>{userInfo.nickName}</span>
                     </div>
-                    <div className={styles['follow-option']}>关注</div>
-                </div>
-                <div className={styles['note-scroll']}>
-                    <div className={styles['content']}>
-                        <div className={styles['title']}>{note.title}</div>
-                        <div className={styles['desc'] + " " + styles['p-spacing']}>
-                            {note.content}
+                    {/* {
+                        isFollowed
+                        ? <div className = {styles['followed-option']} onClick={()=>handleFollow(false)}>已关注</div>
+                        : <div className = {styles['follow-option']} onClick={()=>handleFollow(true)}>关注</div>
+                    } */}
+                    {
+                        renderFollowerBtn()
+                    }
 
-                        </div>
-                        <div className={styles['desc']}>{tag}</div>
-                        <div className={styles['date']}>2023-2-22 10:00:00</div>
+            </div>
+            <div className={styles['note-scroll']}>
+                <div className={styles['content']}>
+                    <div className={styles['title']}>{note.title}</div>
+                    <div className={styles['desc'] + " " + styles['p-spacing']}>
+                        {note.content}
+
                     </div>
-                    <div className={styles['comments-container']}>
-                        <div className={styles['total']}>共{list.length}条评论</div>
-                        <div className={styles['list-container']}>
-                            {list.map((list_item) => {
-                                return (
-                                    <div className={styles['comments-item']} key={Math.random()}>
-                                        <div className={styles['avatar']}>
-                                            <img src={userInfo.avatar} alt="" width={32} height={32} />
+                    <div className={styles['desc']}>{tag}</div>
+                    <div className={styles['date']}>2023-2-22 10:00:00</div>
+                </div>
+                <div className={styles['comments-container']}>
+                    <div className={styles['total']}>共{list.length}条评论</div>
+                    <div className={styles['list-container']}>
+                        {list.map((list_item) => {
+                            return (
+                                <div className={styles['comments-item']} key={Math.random()}>
+                                    <div className={styles['avatar']}>
+                                        <img src={userInfo.avatar} alt="" width={32} height={32} />
+                                    </div>
+                                    <div className={styles['comments-body']}>
+                                        <div className={styles['name-wrapper']}>
+                                            <span className={styles['name']}>{userInfo.nickName}</span>
                                         </div>
-                                        <div className={styles['comments-body']}>
-                                            <div className={styles['name-wrapper']}>
-                                                <span className={styles['name']}>{userInfo.nickName}</span>
-                                            </div>
-                                            <div className={styles['content']}>{comments}</div>
-                                            <div className={styles['comments-info']}>
-                                                <span>2023-02-22 10:01</span>
-                                                <div className={styles['interactions']}>
-                                                    <div className={styles['like-option']} onClick={likeOption}>
-                                                        {liked
-                                                            ? (<MyIcon className={styles['icon']} type="icon-aixin" />)
-                                                            : (<MyIcon className={styles['icon']} type="icon-weishoucang" />)
-                                                        }
-                                                        <span>{likeCount}</span>
-                                                    </div>
+                                        <div className={styles['content']}>{comments}</div>
+                                        <div className={styles['comments-info']}>
+                                            <span>2023-02-22 10:01</span>
+                                            <div className={styles['interactions']}>
+                                                <div className={styles['like-option']} onClick={likeOption}>
+                                                    {liked
+                                                        ? (<MyIcon className={styles['icon']} type="icon-aixin" />)
+                                                        : (<MyIcon className={styles['icon']} type="icon-weishoucang" />)
+                                                    }
+                                                    <span>{likeCount}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                )
-                            })}
-                        </div>
-                    </div>
-
-                </div>
-                <div className={styles['footer-bar']}>
-                    <div className={styles['options']}>
-                        <div className={styles['left']}>
-                            <span className={styles['like-wrapper']} onClick={likeOption}>
-                                {liked
-                                    ? (<MyIcon className={styles['icon']} type="icon-aixin" />)
-                                    : (<MyIcon className={styles['icon']} type="icon-weishoucang" />)
-                                }
-                                <span className={styles['count']}>388</span>
-                            </span>
-                            <span className={styles['collect-wrapper']}>
-                                <MyIcon className={styles['icon']} type="icon-shoucang" />
-                                <span className={styles['count']}>111</span>
-                            </span>
-                            <span className={styles['chat-wrapper']} onClick={() => inputRef?.focus()}>
-                                <MyIcon className={styles['icon']} type="icon-pinglun" />
-                                <span className={styles['count']}>6</span>
-                            </span>
-                        </div>
-                        <div className={styles['right']}>
-                            <MyIcon type="icon-xiaolian" />
-                        </div>
-                    </div>
-                    <div className={styles['outer']}>
-                        <div className={styles['input-wrapper'] + " " + hasInput}>
-                            <input type='text'
-                                className={styles['input']}
-                                placeholder={placeholder}
-                                ref={input => inputRef = input}
-                                onFocus={() => setPholder(undefined)}
-                                onBlur={() => setPholder('请留下有爱的评论吧！')}
-                                value={comments_}
-                                onChange={handleInput}
-                            />
-                            <Popover
-                                title={null}
-                                content={<EmojiInput openChang={handleOpenEmojiChange} emojiInput={emojiInput} />}
-                                trigger='click'
-                                open={isEmojiShow}
-                                onOpenChange={handleOpenEmojiChange}>
-                                <div className={styles['emoji']} >
-                                    <MyIcon type="icon-xiaolian" />
                                 </div>
-                            </Popover>
-
-                        </div>
-                        <Button className={styles['button']}>发送</Button>
+                            )
+                        })}
                     </div>
+                </div>
+
+            </div>
+            <div className={styles['footer-bar']}>
+                <div className={styles['options']}>
+                    <div className={styles['left']}>
+                        <span className={styles['like-wrapper']} onClick={likeOption}>
+                            {liked
+                                ? (<MyIcon className={styles['icon']} type="icon-aixin" />)
+                                : (<MyIcon className={styles['icon']} type="icon-weishoucang" />)
+                            }
+                            <span className={styles['count']}>388</span>
+                        </span>
+                        <span className={styles['collect-wrapper']}>
+                            <MyIcon className={styles['icon']} type="icon-shoucang" />
+                            <span className={styles['count']}>111</span>
+                        </span>
+                        <span className={styles['chat-wrapper']} onClick={() => inputRef?.focus()}>
+                            <MyIcon className={styles['icon']} type="icon-pinglun" />
+                            <span className={styles['count']}>6</span>
+                        </span>
+                    </div>
+                    <div className={styles['right']}>
+                        <MyIcon type="icon-xiaolian" />
+                    </div>
+                </div>
+                <div className={styles['outer']}>
+                    <div className={styles['input-wrapper'] + " " + hasInput}>
+                        <input type='text'
+                            className={styles['input']}
+                            placeholder={placeholder}
+                            ref={input => inputRef = input}
+                            onFocus={() => setPholder(undefined)}
+                            onBlur={() => setPholder('请留下有爱的评论吧！')}
+                            value={comments_}
+                            onChange={handleInput}
+                        />
+                        <Popover
+                            title={null}
+                            content={<EmojiInput openChang={handleOpenEmojiChange} emojiInput={emojiInput} />}
+                            trigger='click'
+                            open={isEmojiShow}
+                            onOpenChange={handleOpenEmojiChange}>
+                            <div className={styles['emoji']} >
+                                <MyIcon type="icon-xiaolian" />
+                            </div>
+                        </Popover>
+
+                    </div>
+                    <Button className={styles['button']}>发送</Button>
                 </div>
             </div>
+        </div>
         </>
     );
 };

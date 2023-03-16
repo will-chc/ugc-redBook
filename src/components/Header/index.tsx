@@ -18,6 +18,10 @@ interface User_Info {
     nickName:string,
     avatar:string,
     breif:string | undefined,
+    followData:{
+        fansCount:number,
+        followCount:number
+    }
 }
 interface FCprops {
     setUserInfo:(data:User_Info) => any;

@@ -6,6 +6,10 @@ interface userInfo {
     nickName:string,
     avatar:string,
     breif:string | undefined,
+    followData:{
+        fansCount:number,
+        followCount:number
+    }
 }
 export const setUserInfo = (data:userInfo) => {
     return {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Divider, Modal } from "antd";
+import { Button, Divider, Modal } from "antd";
 import styles from './index.module.less';
 import NoteItem from "../../components/NoteItem";
 import NoteContent from "../../components/NoteContent";
@@ -7,6 +7,7 @@ import { NoteContext } from "../../Context";
 import { useSelector } from "react-redux";
 import request from "../../server/request";
 import { useHistory } from "react-router-dom";
+import FollowList from "../../components/FollowList";
 
 const H1 = 266, H2 = 150;
 
@@ -15,7 +16,7 @@ interface noteCard {
     id: string,
     user_id: string,
     title: string,
-    liked:boolean,
+    liked: boolean,
     cover_image: string,
     userInfo: {
         nickName: string,
@@ -43,11 +44,16 @@ const UserPage: React.FC = () => {
         email: "",
         nickName: '',
         avatar: '',
-        brief: undefined
-        ,
+        brief: undefined,
+        followData:{
+            fansCount:0,
+            followCount:0
+        }
     });
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [listOpen, setListOpen] = useState(false);
 
     const [column, setColumn] = useState(5);
 
@@ -57,7 +63,7 @@ const UserPage: React.FC = () => {
         user_id: '',
         title: '',
         cover_image: '',
-        liked:false,
+        liked: false,
         userInfo: {
             nickName: '',
             avatar: ''
@@ -71,6 +77,10 @@ const UserPage: React.FC = () => {
     const [page, setPage] = useState(1);
 
     const [hasNextPage, setHasNextPage] = useState(true);
+
+    const [listKey, setListKey] = useState('follow');
+
+    const [follow, setFollow] = useState(false);
 
 
 
@@ -99,6 +109,16 @@ const UserPage: React.FC = () => {
         request('/note_list', { user_id, page }).then((res: any) => {
             setArr(res.resultList);
         });
+        if (localStorage.getItem('userId') != user_id) {
+            request('/isfollow', {
+                follower_id: localStorage.getItem('userId'),
+                followee_id: user_id
+            }).then((res:any) => {
+                const { isFollowed } = res;
+                setFollow(isFollowed);
+            })
+        }
+
     }, []);
     useEffect(() => {
         // 监听滚动
@@ -135,6 +155,24 @@ const UserPage: React.FC = () => {
         return top;
     }
 
+    const openList = (key: string) => {
+        setListKey(key);
+        setListOpen(true);
+    }
+
+    const handleFollow = (new_follow: boolean) => {
+        setFollow(new_follow);
+        const follower_id = localStorage.getItem('userId');
+        const followee_id = user_id;
+        request('/follow', {
+            followee_id,
+            follower_id,
+            new_follow
+        }, 'post').then(res => {
+            console.log(res);
+        })
+    }
+
     return (
         <div className={styles['feeds-page']}>
             <div className={styles['user']}>
@@ -146,12 +184,12 @@ const UserPage: React.FC = () => {
                     <div className={styles['user-id']}>小红书号：{localStorage.getItem('userId')}</div>
                     <div className={styles['user-des']}>{userInfo.brief ? userInfo.brief : '尚未有简介'}</div>
                     <div className={styles['user-data']}>
-                        <div className={styles['item']}>
-                            <span className={styles['count']}>32</span>
+                        <div className={styles['item']} onClick={() => { openList('follow') }}>
+                            <span className={styles['count']}>{userInfo.followData.followCount}</span>
                             <span className={styles['shows']}>关注</span>
                         </div>
-                        <div className={styles['item']}>
-                            <span className={styles['count']}>88</span>
+                        <div className={styles['item']} onClick={() => { openList('fans') }}>
+                            <span className={styles['count']}>{userInfo.followData.fansCount}</span>
                             <span className={styles['shows']}>粉丝</span>
                         </div>
                         <div className={styles['item']}>
@@ -161,6 +199,20 @@ const UserPage: React.FC = () => {
                     </div>
                 </div>
             </div>
+            {
+                user_id != localStorage.getItem('userId')
+                    ? (
+                        <div className={styles['btn-box']}>
+                            {
+                                follow
+                                    ? <Button className={styles['follow']} onClick={() => handleFollow(false)}>已关注</Button>
+                                    : <Button className={styles['unfollow']} onClick={() => handleFollow(true)}>关注</Button>
+                            }
+                        </div>
+                    )
+                    : null
+            }
+
             <div className={styles['tab-list']}>
                 {
                     tabList.map((t) => (
@@ -177,7 +229,7 @@ const UserPage: React.FC = () => {
                         top: getTop(Math.ceil((i + 1) / column), i % column, item) + 88,
                         left: (i % column) * 240 + 42,
                     }}
-                    key={item.id + Math.random()}
+                        key={item.id + Math.random()}
                     >
                         <NoteItem key={item.id + Math.random()} item={item} showDetail={() => showDetail(item)} />
                     </div>
@@ -200,6 +252,13 @@ const UserPage: React.FC = () => {
                         >
                             <NoteContent data={curData} />
                         </Modal>
+                    )
+                    : null
+            }
+            {
+                listOpen
+                    ? (
+                        <FollowList isOpen={listOpen} setOpen={setListOpen} acticedKey={listKey} setActivedKey={setListKey} user_id={user_id} />
                     )
                     : null
             }
