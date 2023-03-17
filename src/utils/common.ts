@@ -9,3 +9,10 @@ export function throttle<T extends (...args: any[]) => void>(func: T, wait: numb
         }
     } as T;
 }
+
+export  function formatTime(utcTime:Date) {
+    const date = new Date(utcTime);
+    const formattedDate = date.toLocaleString().replace(/\//g, '-');
+    
+    return formattedDate;
+  }

@@ -17,6 +17,7 @@ interface noteCard {
   title: string,
   cover_image: string,
   liked:boolean,
+  likedCount:number,
   userInfo: {
     nickName: string,
     avatar: string
@@ -39,6 +40,7 @@ const Main: React.FC = () => {
     title: '',
     cover_image: '',
     liked:false,
+    likedCount:0,
     userInfo: {
       nickName: '',
       avatar: ''
@@ -92,7 +94,8 @@ const Main: React.FC = () => {
     // 获取初始化数据
   const getInitData = () => {
       // 请求数据
-    request('/note_list', { page }).then((res: any) => {
+      const my_id = Number(localStorage.getItem('userId'));
+    request('/note_list', { page,  my_id}).then((res: any) => {
       const { resultList, hasNextPage } = res;
       setArr(resultList);
       setHasNextPage(hasNextPage);

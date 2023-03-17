@@ -6,6 +6,7 @@ import { Button, Popover } from "antd";
 import EmojiInput from "../EmojiInput";
 import { MyIcon } from "../../Icon/MyIcon";
 import request from "../../server/request";
+import { formatTime } from "../../utils/common";
 
 interface noteCard {
     id: string,
@@ -13,6 +14,7 @@ interface noteCard {
     title: string,
     cover_image: string,
     liked: boolean,
+    likedCount: number,
     userInfo: {
         nickName: string,
         avatar: string
@@ -21,12 +23,20 @@ interface noteCard {
 interface RCprops {
     data: noteCard
 }
+interface typeComment {
+    avatar: string,
+    id: number,
+    nickname: string,
+    user_id: number,
+    content: number,
+    created_at: Date,
+    liked: boolean,
+    likedCount: number,
+}
 const NoteContent: React.FC<RCprops> = ({ data }) => {
     const { userInfo } = data;
     const tag = '#小米13#小米手机#小米#数码#数码街区由我造#一起聊数码#手机';
-    const comments = "即使小米13要卖两年，出13s，也得是明年了";
     let likeCount = 66;
-    const list = new Array(6).fill(1);
     let inputRef: HTMLInputElement | null;
 
     // state
@@ -39,39 +49,36 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
     const [hasInput, setHasInput] = useState<string | undefined>("");
 
     const [ImgArr, setImgArr] = useState<string[]>([]);
-    const [note, setNote] = useState({ title: '', content: '' });
+    const [note, setNote] = useState({ title: '', content: '', address: '', created_at: '' });
     const [userId, setUserId] = useState(0);
     const [isFollowed, setIsFollowed] = useState(false);
 
+    const [commentList, setCommentList] = useState<typeComment[]>([]);
+
     useEffect(() => {
         request('/note_detail', { id: data.id }).then((res: any) => {
-            const { img_arr, title, content, user_id } = res;
+            const { img_arr, title, content, user_id, created_at } = res;
             setImgArr(img_arr);
-            setNote({ title, content });
+            setNote({ title, content, address: res.location.name, created_at: formatTime(created_at) });
             setUserId(user_id);
             request('/isfollow', { followee_id: user_id, follower_id: Number(localStorage.getItem('userId')) }).then((res: any) => {
                 const { isFollowed } = res;
                 setIsFollowed(isFollowed);
             })
+        });
+        // 获取评论 
+        request('/comment_list', { id: data.id, my_id: Number(localStorage.getItem('userId')) }).then((res: any) => {
+            const { comments } = res;
+            setCommentList(comments);
         })
     }, [])
     // function 
-    const preImg = () => {
-        if (cur === 0) {
-            setCur(ImgArr.length - 1);
-        }
-        else {
-            setCur(cur - 1);
-        }
 
+    const preImg = () => {
+        cur === 0 ? setCur(ImgArr.length - 1) : setCur(cur - 1);
     }
     const nextImg = () => {
-        if (cur === ImgArr.length - 1) {
-            setCur(0);
-        }
-        else {
-            setCur(cur + 1);
-        }
+        cur === ImgArr.length - 1 ? setCur(0) : setCur(cur + 1);
     }
     const showOption = () => {
         if (ImgArr.length === 1) {
@@ -85,6 +92,7 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
         }
         setIsShow(false);
     }
+
     const likeOption = () => {
         request('/like', {
             note_id: data.id,
@@ -111,35 +119,47 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
 
     }
     const emojiInput = (emoji: string) => {
-        if (comments_) {
-            setComments_(comments_ + emoji);
-        }
-        else {
-            setComments_(emoji);
-        }
+        comments_ ? setComments_(comments_ + emoji) : setComments_(emoji);
         setHasInput(styles['hasInput']);
     }
 
     // 关注
-    const handleFollow = (new_follow:boolean) => {
+    const handleFollow = (new_follow: boolean) => {
         request('/follow', {
             follower_id: Number(localStorage.getItem('userId')),
             followee_id: userId,
             new_follow
-        }, 'post').then((res:any) => {
+        }, 'post').then((res: any) => {
             const { isFollowed } = res;
             setIsFollowed(isFollowed);
         })
+    }
+    // 评论
+    const handleComment = () => {
+        const note_id = data.id;
+        const user_id = Number(localStorage.getItem('userId'));
+        request('/comment', { note_id, user_id, comments_ }, "post").then(res => {
+            // 获取评论 
+            request('/comment_list', { id: data.id, my_id: user_id }).then((res: any) => {
+                const { comments } = res;
+                console.log(comments, "@@@");
+
+                setCommentList(comments);
+            });
+            setComments_('');
+            setHasInput("");
+        })
+
     }
 
     // tsx
     const renderFollowerBtn = () => {
         if (localStorage.getItem('userId') == data.user_id) return null;
         if (isFollowed) {
-            return <div className = {styles['followed-option']} onClick={()=>handleFollow(false)}>已关注</div>
+            return <div className={styles['followed-option']} onClick={() => handleFollow(false)}>已关注</div>
         }
         else {
-            return <div className = {styles['follow-option']} onClick={()=>handleFollow(true)}>关注</div>
+            return <div className={styles['follow-option']} onClick={() => handleFollow(true)}>关注</div>
         }
 
     }
@@ -171,103 +191,126 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
                         renderFollowerBtn()
                     }
 
-            </div>
-            <div className={styles['note-scroll']}>
-                <div className={styles['content']}>
-                    <div className={styles['title']}>{note.title}</div>
-                    <div className={styles['desc'] + " " + styles['p-spacing']}>
-                        {note.content}
+                </div>
+                <div className={styles['note-scroll']}>
+                    <div className={styles['content']}>
+                        <div className={styles['title']}>{note.title}</div>
+                        <div className={styles['desc'] + " " + styles['p-spacing']}>
+                            {note.content}
+
+                        </div>
+                        <div className={styles['desc']}>{tag}</div>
+                        <div className={styles['date']}>{note.created_at}</div>
+                        <div className={styles['date']}> {note.address}</div>
 
                     </div>
-                    <div className={styles['desc']}>{tag}</div>
-                    <div className={styles['date']}>2023-2-22 10:00:00</div>
+                    <div className={styles['comments-container']}>
+                        <div className={styles['total']}>共{commentList.length}条评论</div>
+
+                        {/* 评论 */}
+                        <div className={styles['list-container']}>
+                            {commentList.map((list_item) => {
+                                return (
+                                    <Comments list_item={list_item} />
+                                )
+                            })}
+                        </div>
+                    </div>
+
                 </div>
-                <div className={styles['comments-container']}>
-                    <div className={styles['total']}>共{list.length}条评论</div>
-                    <div className={styles['list-container']}>
-                        {list.map((list_item) => {
-                            return (
-                                <div className={styles['comments-item']} key={Math.random()}>
-                                    <div className={styles['avatar']}>
-                                        <img src={userInfo.avatar} alt="" width={32} height={32} />
-                                    </div>
-                                    <div className={styles['comments-body']}>
-                                        <div className={styles['name-wrapper']}>
-                                            <span className={styles['name']}>{userInfo.nickName}</span>
-                                        </div>
-                                        <div className={styles['content']}>{comments}</div>
-                                        <div className={styles['comments-info']}>
-                                            <span>2023-02-22 10:01</span>
-                                            <div className={styles['interactions']}>
-                                                <div className={styles['like-option']} onClick={likeOption}>
-                                                    {liked
-                                                        ? (<MyIcon className={styles['icon']} type="icon-aixin" />)
-                                                        : (<MyIcon className={styles['icon']} type="icon-weishoucang" />)
-                                                    }
-                                                    <span>{likeCount}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                <div className={styles['footer-bar']}>
+                    <div className={styles['options']}>
+                        <div className={styles['left']}>
+                            <span className={styles['like-wrapper']} onClick={likeOption}>
+                                {liked
+                                    ? (<MyIcon className={styles['icon']} type="icon-aixin" />)
+                                    : (<MyIcon className={styles['icon']} type="icon-weishoucang" />)
+                                }
+                                <span className={styles['count']}>388</span>
+                            </span>
+                            <span className={styles['collect-wrapper']}>
+                                <MyIcon className={styles['icon']} type="icon-shoucang" />
+                                <span className={styles['count']}>111</span>
+                            </span>
+                            <span className={styles['chat-wrapper']} onClick={() => inputRef?.focus()}>
+                                <MyIcon className={styles['icon']} type="icon-pinglun" />
+                                <span className={styles['count']}>6</span>
+                            </span>
+                        </div>
+                        <div className={styles['right']}>
+                            <MyIcon type="icon-xiaolian" />
+                        </div>
+                    </div>
+                    <div className={styles['outer']}>
+                        <div className={styles['input-wrapper'] + " " + hasInput}>
+                            <input type='text'
+                                className={styles['input']}
+                                placeholder={placeholder}
+                                ref={input => inputRef = input}
+                                onFocus={() => setPholder(undefined)}
+                                onBlur={() => setPholder('请留下有爱的评论吧！')}
+                                value={comments_}
+                                onChange={handleInput}
+                            />
+                            <Popover
+                                title={null}
+                                content={<EmojiInput openChang={handleOpenEmojiChange} emojiInput={emojiInput} />}
+                                trigger='click'
+                                open={isEmojiShow}
+                                onOpenChange={handleOpenEmojiChange}>
+                                <div className={styles['emoji']} >
+                                    <MyIcon type="icon-xiaolian" />
                                 </div>
-                            )
-                        })}
-                    </div>
-                </div>
+                            </Popover>
 
-            </div>
-            <div className={styles['footer-bar']}>
-                <div className={styles['options']}>
-                    <div className={styles['left']}>
-                        <span className={styles['like-wrapper']} onClick={likeOption}>
-                            {liked
-                                ? (<MyIcon className={styles['icon']} type="icon-aixin" />)
-                                : (<MyIcon className={styles['icon']} type="icon-weishoucang" />)
-                            }
-                            <span className={styles['count']}>388</span>
-                        </span>
-                        <span className={styles['collect-wrapper']}>
-                            <MyIcon className={styles['icon']} type="icon-shoucang" />
-                            <span className={styles['count']}>111</span>
-                        </span>
-                        <span className={styles['chat-wrapper']} onClick={() => inputRef?.focus()}>
-                            <MyIcon className={styles['icon']} type="icon-pinglun" />
-                            <span className={styles['count']}>6</span>
-                        </span>
+                        </div>
+                        <Button className={styles['button']} onClick={handleComment}>发送</Button>
                     </div>
-                    <div className={styles['right']}>
-                        <MyIcon type="icon-xiaolian" />
-                    </div>
-                </div>
-                <div className={styles['outer']}>
-                    <div className={styles['input-wrapper'] + " " + hasInput}>
-                        <input type='text'
-                            className={styles['input']}
-                            placeholder={placeholder}
-                            ref={input => inputRef = input}
-                            onFocus={() => setPholder(undefined)}
-                            onBlur={() => setPholder('请留下有爱的评论吧！')}
-                            value={comments_}
-                            onChange={handleInput}
-                        />
-                        <Popover
-                            title={null}
-                            content={<EmojiInput openChang={handleOpenEmojiChange} emojiInput={emojiInput} />}
-                            trigger='click'
-                            open={isEmojiShow}
-                            onOpenChange={handleOpenEmojiChange}>
-                            <div className={styles['emoji']} >
-                                <MyIcon type="icon-xiaolian" />
-                            </div>
-                        </Popover>
-
-                    </div>
-                    <Button className={styles['button']}>发送</Button>
                 </div>
             </div>
-        </div>
         </>
     );
 };
 
 export default NoteContent;
+
+interface CommentsProps {
+    list_item: typeComment
+}
+const Comments: React.FC<CommentsProps> = ({ list_item }) => {
+    const [liked, setLiked] = useState(list_item.liked);
+    const [likedCount, setLikedCount] = useState(list_item.likedCount);
+    const likeOption = () => {
+        const user_id = Number(localStorage.getItem('userId'));
+        request('/comments_like', {user_id, comment_id:list_item.id, likeStatus:!liked}).then(res=>{
+            console.log(res);
+        })
+        setLiked(!liked);
+        setLikedCount(liked ? likedCount - 1 : likedCount + 1 );
+    }
+    return (
+        <div className={styles['comments-item']} key={Math.random()}>
+            <div className={styles['avatar']}>
+                <img src={list_item.avatar} alt="" width={32} height={32} />
+            </div>
+            <div className={styles['comments-body']}>
+                <div className={styles['name-wrapper']}>
+                    <span className={styles['name']}>{list_item.nickname}</span>
+                </div>
+                <div className={styles['content']}>{list_item.content}</div>
+                <div className={styles['comments-info']}>
+                    <span>{formatTime(list_item.created_at)}</span>
+                    <div className={styles['interactions']}>
+                        <div className={styles['like-option']} onClick={likeOption}>
+                            {liked
+                                ? (<MyIcon className={styles['icon']} type="icon-aixin" />)
+                                : (<MyIcon className={styles['icon']} type="icon-weishoucang" />)
+                            }
+                            <span>{likedCount}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

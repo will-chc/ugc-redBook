@@ -17,6 +17,7 @@ interface noteCard {
     user_id: string,
     title: string,
     liked: boolean,
+    likedCount:number,
     cover_image: string,
     userInfo: {
         nickName: string,
@@ -64,6 +65,7 @@ const UserPage: React.FC = () => {
         title: '',
         cover_image: '',
         liked: false,
+        likedCount:0,
         userInfo: {
             nickName: '',
             avatar: ''
