@@ -4,13 +4,15 @@ import request from "../../server/request";
 import styles from './index.module.less'
 
 //action
-import { setUserInfo } from "./reducer/actions";
+import { setUserInfo, setPath } from "./reducer/actions";
 import { connect } from "react-redux";
 const mapStateToProps = (state: any) => ({
-    userInfo:state.useInfo
+    info:state.userInfo.avatar,
+    path:state.headerState.path
   });
   const mapDispatchToProps = {
-    setUserInfo
+    setUserInfo,
+    setPath
   }
 
 interface User_Info {
@@ -24,9 +26,13 @@ interface User_Info {
     }
 }
 interface FCprops {
-    setUserInfo:(data:User_Info) => any;
+    setUserInfo:(data:User_Info) => any,
+    setPath:(path:string) => any,
+    info:User_Info,
+    path:string
+
 }
-const Header: React.FC<FCprops>  = ({setUserInfo}) => {
+const Header: React.FC<FCprops>  = ({setUserInfo, info, path, setPath}) => {
     const menu = [
         {
             label:'首页',
@@ -47,16 +53,18 @@ const Header: React.FC<FCprops>  = ({setUserInfo}) => {
     ];
     const [avatar, setAvatar] = useState<string>('');
 
-    useEffect(()=>{
+    useEffect(()=>{        
         request('/userInfo',{user_id:localStorage.getItem('userId')},"get").then((res:any)=>{
             const { avatar } = res;
             setAvatar(avatar);
             setUserInfo(res);
-        })
+        });
+
     },[])
     const history = useHistory();
     const handlePush = (path:string) => {
         history.push(path);
+        setPath(path);
     }
     return (
         <header className={ styles['header'] }>

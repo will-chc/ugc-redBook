@@ -36,7 +36,6 @@ interface typeComment {
 const NoteContent: React.FC<RCprops> = ({ data }) => {
     const { userInfo } = data;
     const tag = '#小米13#小米手机#小米#数码#数码街区由我造#一起聊数码#手机';
-    let likeCount = 66;
     let inputRef: HTMLInputElement | null;
 
     // state
@@ -54,6 +53,8 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
     const [isFollowed, setIsFollowed] = useState(false);
 
     const [commentList, setCommentList] = useState<typeComment[]>([]);
+
+    const [likedCount, setLikedCount] = useState(data.likedCount);
 
     useEffect(() => {
         request('/note_detail', { id: data.id }).then((res: any) => {
@@ -102,6 +103,7 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
             console.log(res);
         })
         setLiked(!liked);
+        setLikedCount(liked ? likedCount - 1 : likedCount + 1);
     }
 
     const handleOpenEmojiChange = (open: boolean) => {
@@ -226,15 +228,15 @@ const NoteContent: React.FC<RCprops> = ({ data }) => {
                                     ? (<MyIcon className={styles['icon']} type="icon-aixin" />)
                                     : (<MyIcon className={styles['icon']} type="icon-weishoucang" />)
                                 }
-                                <span className={styles['count']}>388</span>
+                                <span className={styles['count']}>{likedCount}</span>
                             </span>
                             <span className={styles['collect-wrapper']}>
-                                <MyIcon className={styles['icon']} type="icon-shoucang" />
-                                <span className={styles['count']}>111</span>
+                                <MyIcon className={styles['icon']} type="icon-shoucang" style={{marginRight:20}}/>
+                                {/* <span className={styles['count']}>111</span> */}
                             </span>
                             <span className={styles['chat-wrapper']} onClick={() => inputRef?.focus()}>
                                 <MyIcon className={styles['icon']} type="icon-pinglun" />
-                                <span className={styles['count']}>6</span>
+                                <span className={styles['count']}>{commentList.length}</span>
                             </span>
                         </div>
                         <div className={styles['right']}>
