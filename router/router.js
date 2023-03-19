@@ -4,8 +4,11 @@ const jwt = require('jsonwebtoken');
 const upload = require("../multer/upload.js");
 const { db } = require('../MySQL/connect');
 const router = express.Router();
+const { getSevenDateArray } = require("../utils/time");
 
 const secretKey = 'scret'; //密钥用于签名和验证JWT;
+
+
 
 // 图片上传
 router.post('/uploadImg', (req, res, next) => {
@@ -110,11 +113,17 @@ router.get('/test', authenticate, (req, res, next) => {
 });
 
 // 获取用户信息
-router.get('/userInfo', (req, res, next) => {
+router.get('/userInfo', async (req, res, next) => {
     const { user_id } = req.query;
-    db.select('user', 'email, nickName, avatar, brief', 'where id = ? limit 1', [], [user_id]).then(result => {
-        res.send({ data: result[0] });
-    })
+    const result = await db.select('user', 'email, nickName, avatar, brief', 'where id = ? limit 1', [], [user_id]);
+    const followInfo = await db.select('follow', "COUNT (*) as count", 'where follower_id = ?', "", [user_id]);
+    const fansInfo = await db.select('follow', "COUNT (*) as count", 'where followee_id = ?', "", [user_id]);
+    const followData = {
+        fansCount: fansInfo[0].count,
+        followCount: followInfo[0].count
+
+    }
+    res.send({ data: { ...result[0], followData } });
 });
 
 
@@ -155,7 +164,7 @@ router.post('/create_note', authenticate, async (req, res, next) => {
 // 获取笔记列表
 router.get('/note_list', async (req, res, next) => {
 
-    const { user_id, page } = req.query;
+    const { user_id, page, my_id } = req.query;
     const pageSize = 20;
     const condition = user_id ? `where user_id = ?` : '';
 
@@ -168,9 +177,10 @@ router.get('/note_list', async (req, res, next) => {
     const resultList = [];
     for (const r of result) {
         const userInfo = await db.select('user', 'nickName, avatar', "where id = ?", "", [r.user_id]);
-        let liked = await db.select('`like`', 'id', 'where user_id = ? and note_id = ?', "", [r.user_id, r.id]);
+        let liked = await db.select('`like`', 'id', 'where user_id = ? and note_id = ?', "", [my_id, r.id]);
+        let count = await db.select('`like`', 'COUNT(*) AS count', 'where note_id = ?', "", [r.id]);
         liked = liked.length > 0 ? true : false;
-        resultList.push({ ...r, userInfo: userInfo[0], liked });
+        resultList.push({ ...r, userInfo: userInfo[0], liked, likedCount: count[0].count });
     }
     res.send({ data: { resultList, hasNextPage } });
 });
@@ -188,9 +198,12 @@ router.get('/note_detail', async (req, res, next) => {
     // 去除空的img
     const img_arr = imgArrRaw.filter(Boolean);
     // 获取地址
-    const localtionResult = await db.select('location', "*", 'where id = ? limit 1', '', [note.location_id]);
+    const locationResult = await db.select('location', "*", 'where id = ? limit 1', '', [note.location_id]);
     delete note.location_id;
-    res.send({ data: { ...note, img_arr, localtion: localtionResult[0] } });
+    // 更新浏览量
+    await db.update('note', { views: note.views + 1 },"where id = ?", [id]);
+
+    res.send({ data: { ...note, img_arr, location: locationResult[0] } });
 });
 
 //作品点赞
@@ -198,9 +211,11 @@ router.post('/like', authenticate, async (req, res, next) => {
     let { note_id, user_id, liked } = req.body;
     user_id = Number(user_id);
     if (liked === true) {
-        await db.insert('`like`', { note_id, user_id });
+        let liked = await db.select('`like`', '*', 'where note_id = ? and user_id = ? ', "", [note_id, user_id]);
+        if (liked.length == 0) {
+            await db.insert('`like`', { note_id, user_id });
+        }
         res.send({ data: { msg: '点赞成功' } });
-
     }
     else {
         await db.delete('`like`', 'where note_id = ? and user_id = ?', [note_id, user_id]);
@@ -213,9 +228,9 @@ router.post('/follow', authenticate, async (req, res, next) => {
     // 查询索引是否存在
     let isExist = await db.select('follow', '*', 'where follower_id = ? and followee_id = ? ', "", [follower_id, followee_id]);
     isExist = isExist.length > 0 ? true : false;
-    if (isExist && !new_follow) {
+    if (isExist || !new_follow) {
         await db.delete('follow', 'where follower_id = ? and followee_id = ?', [follower_id, followee_id])
-        res.send({ data: { msg: '取消关注',isFollowed:false } });
+        res.send({ data: { msg: '取消关注', isFollowed: false } });
     }
     else {
         await db.insert('follow', { follower_id, followee_id });
@@ -232,15 +247,211 @@ router.get('/isfollow', async (req, res, next) => {
 });
 
 router.get('/follow_list', async (req, res, next) => {
-    const {user_id} = req.query;
-    
-    const list = await db.select('follow', 'followee_id', 'where follower_id = ? ',"ORDER BY created_at DESC", [ user_id]);
+    const { user_id } = req.query;
+
+    const list = await db.select('follow',
+        'user.nickName, user.avatar, follow.follower_id', 'JOIN user ON follow.follower_id = user.id',
+        'where followee_id = ? ORDER BY created_at DESC',
+        [user_id]);
+    console.log(list);
     let followList = [];
     for (const l of list) {
-        const res = await db.select('user', 'nickName, avatar', 'where id = ? ', "limit 1", [l.followee_id] );
-        followList.push({...res[0], user_id: l.followee_id, followed:true});
+        followList.push({ ...l, user_id: l.follower_id, followed: true });
     }
-    res.send({data:{msg:'success', followList}});
+    res.send({ data: { msg: 'success', followList } });
+});
+//
+router.get('/fans_list', async (req, res, next) => {
+    const { user_id } = req.query;
+
+    // 联表查询
+    const list = await db.select('follow',
+        'user.nickName, user.avatar, follow.follower_id', 'JOIN user ON follow.follower_id = user.id',
+        'where followee_id = ? ORDER BY created_at DESC',
+        [user_id]);
+    let fansList = [];
+    for (const l of list) {
+        const followCount = await db.select('follow', 'COUNT(*) as count', 'where follower_id = ? and followee_id = ?', '', [user_id, l.follower_id]);
+        followed = followCount[0].count > 0 ? true : false;
+        fansList.push({ ...l, user_id: l.followee_id, followed });
+    }
+
+    res.send({ data: { msg: 'success', fansList } });
+});
+
+// 获取评论
+router.get('/comment_list', async (req, res, next) => {
+    const { id, my_id } = req.query;
+    const list = await db.select('comment', "comment.user_id, comment.content, user.nickname, comment.id, user.avatar, comment.created_at", "JOIN user ON comment.user_id = user.id",
+        "where comment.note_id = ?", [id]);
+    const comments = [];
+    for (const c of list) {
+        let count = await db.select('comment_like', "COUNT (*) as count", "where comment_id = ?", "", [c.id]);
+        let liked = await db.select('comment_like', 'id', 'where user_id = ? and comment_id = ?', "", [my_id, c.id]);
+        liked = liked.length > 0 ? true : false;
+        comments.push({ ...c, likedCount: count[0].count, liked });
+    }
+    res.send({ data: { count: list.length, comments } });
+});
+
+// 评论
+router.post('/comment', authenticate, async (req, res, next) => {
+    const { user_id, note_id, comments_: content } = req.body;
+    await db.insert('comment', { user_id, note_id, content });
+    res.send({ data: { msg: 'success' } });
+});
+// 点赞评论
+router.get('/comments_like', authenticate, async (req, res, next) => {
+    const { user_id, comment_id, likeStatus } = req.query;
+    const isExist = await db.select('comment_like', "*", 'where user_id = ? and comment_id = ? ', "limit 1", [user_id, comment_id]);
+    if (isExist.length == 0 && likeStatus) {
+        await db.insert('comment_like', { user_id, comment_id });
+        res.send({ data: { msg: '点赞成功' } });
+    }
+    else {
+        await db.delete('comment_like', 'where user_id = ? and comment_id = ? ', [user_id, comment_id]);
+        res.send({
+            data: {
+                msg: '取消点赞'
+            }
+        })
+    }
+});
+
+// 获取关注数
+router.get('/follow_count', async (req, res, next) => {
+    const { user_id } = req.query;
+    const count = await db.select('follow', "COUNT (*) as count", 'where follower_id = ?', "", [user_id]);
+    res.send({
+        data: {
+            count: count[0].count
+        }
+    })
+});
+
+// 获取粉丝数
+router.get('/fans_count', async (req, res, next) => {
+    const { user_id } = req.query;
+    const count = await db.select('follow', "COUNT (*) as count", 'where followee_id = ?', "", [user_id]);
+    res.send({
+        data: {
+            count: 1
+        }
+    })
+})
+
+// 获取点赞数
+router.get('/like_count', async (req, res, next) => {
+    const { user_id } = req.query;
+    const noteList = await db.select('note', "id", " where user_id = ?", "", [user_id]);
+    const ids = noteList.map(({ id }) => id).join(',');
+    const count = await db.select('`like`', "COUNT (*) as count", `where note_id IN (${ids})`, "", []);
+
+    res.send({
+        data: {
+            count: count[0].count
+        }
+    })
+});
+
+// 获取七天内的新增粉丝情况
+router.get('/add_fans_data', authenticate, async (req, res, next) => {
+    const { user_id } = req.query;
+    const newList = await db.select('follow', "DATE(created_at) AS date, COUNT(*) AS new_fans",
+        "where followee_id = ? and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)", "GROUP BY DATE(created_at)", [user_id]);
+    let dateArr = getSevenDateArray();
+    for (const i of newList) {
+        i.date = i.date.toISOString().substring(0, 10);
+    }
+
+    dataList = dateArr.map(date => {
+        const { new_fans = 0 } = newList.find(d => d.date === date) || {};
+        return { date, new_fans };
+      });
+      
+    res.send({
+        data: {
+            dataList
+        }
+    })
+});
+
+//获取粉丝成分
+router.get('/fans_gender', async (req, res, next) => {
+    const { user_id } = req.query;
+    const genderList =await db.select(
+        'follow',
+        'COUNT(*) AS count, user.gender',
+        'JOIN user ON follow.follower_id = user.id',
+        'WHERE follow.followee_id = ? GROUP BY user.gender',
+        [user_id]
+      );
+    let gender = ['U','F','M'];
+    const GenderMap = {
+        U:'未知',
+        F:'男',
+        M:'女'
+    }
+    gender = gender.map(g=>{
+        const { count = 0 } = genderList.find(d=>d.gender == g) || {}
+        return {gender:GenderMap[g], count}
+    });
+    res.send({
+        data:{
+            gender
+        }
+    })
+});
+
+// 获取近七篇笔记的浏览量
+router.get('/note_views_7',authenticate, async (req, res, next) =>{
+    const { user_id } = req.query;
+    const result = await db.select('note', "title, views","where user_id = ?", "ORDER BY created_at DESC limit 7 ",[user_id]);
+    const total = await db.select('note', "SUM (views) AS total", 'where user_id = ?',"", [user_id]);
+    res.send({
+        data:{
+            viewsList:result,
+        }
+    })
+});
+
+router.get('/note_data_view', authenticate, async (req, res, next) => {
+    const {user_id} = req.query;
+    const viewTotal = await db.select('note', "SUM (views) AS total", 'where user_id = ?',"", [user_id]);
+    const commentTotal = await db.select('note','COUNT (comment.id) as total', "JOIN comment ON note.id = comment.note_id ", "where note.user_id = ?", [user_id]);
+    res.send({
+        data:{
+            viewTotal: viewTotal[0].total,
+            commentTotal:commentTotal[0].total
+        }
+    })
+
+});
+
+router.get('/like_7', authenticate, async (req,res, next)=> {
+    const { user_id } = req.query;
+    const likeArr = await db.select('note', " note.id, note.title, COUNT(`like`.id) AS count", 
+    "LEFT JOIN `like` ON note.id = `like`.note_id WHERE note.user_id = ?", 
+    "GROUP BY note.id ORDER BY note.created_at DESC LIMIT 7", [user_id]);
+   
+    res.send({
+        data:{
+            likeArr
+        }
+    })
+});
+
+router.get('/comments_7', authenticate, async (req, res, next) => {
+    const { user_id } = req.query;
+    const comments = await db.select('note', " note.id, note.title, COUNT(`comment`.id) AS count", 
+    "LEFT JOIN `comment` ON note.id = `comment`.note_id WHERE note.user_id = ?", 
+    "GROUP BY note.id ORDER BY note.created_at DESC LIMIT 7", [user_id]);
+   
+    res.send({
+        data:{
+            comments
+        }
+    })
 })
 
 
