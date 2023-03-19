@@ -1,43 +1,91 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import styles from './index.module.less'
 import * as echarts from 'echarts';
+import request from "../../../../server/request";
 interface key {
     [key: string]: string;
     views: string;
     likes: string;
     comments: string;
-  }
-const KEYMAP: key = {
-    views:'浏览量',
-    likes:'点赞数',
-    comments:'评论数'
 }
-const NoteData: React.FC = () => {
-    const cardArr = [
+const KEYMAP: key = {
+    views: '浏览量',
+    likes: '点赞数',
+    comments: '评论数'
+}
+const NoteData: React.FC<{likeTotal:number}> = ({likeTotal}) => {
+    const user_id = localStorage.getItem('userId');
+    
+    const [cardArr, setCardArr] = useState([
         {
             label: '浏览量',
-            value: 18809,
-            key:'views'
+            value: 0,
+            key: 'views'
         },
         {
             label: '点赞数',
-            value: 18,
-            key:'likes'
+            value: 0,
+            key: 'likes'
         },
         {
             label: '评论数',
-            value: 12,
-            key:'comments'
+            value: 0,
+            key: 'comments'
         }
-    ];
-    const getData = () => {
-        if(activedKey == 'views')
-        return [10086, 998, 1212, 111, 508, 991,1000];
-        return [5, 20, 36, 10, 10, 20, 5];
+    ]);
+    const [data, setData] = useState<any[]>([]);
+  
+    const getData = async () => {
+        let data: {
+            name: string,
+            value: number
+        }[] = [];
+        if (activedKey == 'views') {
+           
+        }
+        switch (activedKey) {
+            case 'views':
+                const { viewsList } = await request('/note_views_7', { user_id }) as any;
+                data = viewsList.map((v: any) => ({ name: v.title, value: v.views }));
+                break;
+                
+            case 'likes': 
+            const { likeArr } = await request('/like_7', {user_id}) as any;
+            data = likeArr.map((l:any)=>({
+                name:l.title,
+                value:l.count
+            }));
+            break;
+
+            case 'comments':
+                const { comments } = await request('/comments_7', {user_id}) as any;
+                data = comments.map((l:any)=>({
+                    name:l.title,
+                    value:l.count
+                }));
+                break;
+        }
+        setData(data);
+        
     }
 
+    useEffect(() => {
+        request('/note_data_view', { user_id }).then((res: any) => {
+            const { viewTotal, commentTotal } = res;
+            cardArr[0].value = viewTotal;
+            cardArr[1].value = likeTotal;
+            cardArr[2].value = commentTotal;
+            setCardArr([...cardArr]);
+        });
+    }, [likeTotal])
     const [activedKey, setActivedKey] = useState(cardArr[0].key);
-    const getStyles = (key:string) => {
+    useLayoutEffect(() => {
+        getData();
+    }, [activedKey]);
+
+
+
+    const getStyles = (key: string) => {
         let className = styles['card']
         if (key == activedKey) return className + " " + styles['actived'];
         return className;
@@ -60,57 +108,75 @@ const NoteData: React.FC = () => {
 
             </div>
             <div className={styles['chart']}>
-                <header className={styles['header']}>近七天 {KEYMAP[activedKey]}</header>
-                <Chart data={getData()} label ={KEYMAP[activedKey]}/>
+                <header className={styles['header']}>{activedKey === 'views' ? "最近七篇" : "近七天"} {KEYMAP[activedKey]}</header>
+                <Chart data={data} label={KEYMAP[activedKey]} />
             </div>
         </div>
     );
 };
 
 interface chartFC {
-    data:number[],
-    label:string
+    data: {
+        value: number,
+        name: string
+    }[],
+    label: string
 }
-const Chart:React.FC<chartFC>= ({data, label}) => {
+const Chart: React.FC<chartFC> = ({ data, label }) => {
     const chartRef = useRef<any>(null);
     const option = {
         title: {
         },
         tooltip: {
-          trigger: "axis",
+            trigger: "axis",
         },
         legend: {
-          data: [label],
+            data: [label],
         },
         xAxis: {
-          data: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
+            data: data.map(d => d.name),
+        },
+        axisLabel: {
+            showMinLabel: true,
+            showMaxLabel: true,
+            formatter: function (value: string) {
+                if (value.length > 5) {
+                    return value.substring(0, 5) + '...';
+                } else {
+                    return value;
+                }
+            }
         },
         yAxis: {},
         series: [
-          {
-            name: label,
-            type: "line",
-            data,
-            lineStyle: {
-                color: '#ff4684',
-                width: 4,
+            {
+                name: label,
+                type: "line",
+                data,
+                lineStyle: {
+                    color: '#ff4684',
+                    width: 4,
+                },
+                symbol: 'circle',
+                symbolSize: 10,// 设置点的大小为10
+                itemStyle: {
+                    color: '#fff', // 设置点的颜色为红色
+                    borderWidth: 2, // 设置点的边框宽度为2
+                    borderColor: '#ff4684', // 设置点的边框颜色为黄色
+                }
             },
-            symbol: 'circle',
-            symbolSize: 10 ,// 设置点的大小为10
-            itemStyle: {
-                color: '#fff', // 设置点的颜色为红色
-                borderWidth: 2, // 设置点的边框宽度为2
-                borderColor: '#ff4684', // 设置点的边框颜色为黄色
-            }
-          },
         ],
-      };
-    useEffect(()=>{
-        const chart =  echarts.init(chartRef.current);
+    };
+    useEffect(() => {
+        // console.log(111);
+        const chart = echarts.init(chartRef.current);
         chart.setOption(option);
-    },[data,label]);
+        return () => {
+            chart.dispose();
+        }
+    }, [data, label]);
     return (
-        <div ref={chartRef} style={{width:800, height:400}}></div>
+        <div ref={chartRef} style={{ width: 800, height: 400 }}></div>
     )
 }
 

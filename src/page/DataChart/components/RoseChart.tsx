@@ -6,10 +6,12 @@ interface FCprops {
 }
 const RoseChart: React.FC<FCprops> = ({ data }) => {
     const fansData = [
-        { count: 28, label: '男' },
-        { count: 19, label: '女' },
-        { count: 31, label: '不展示' },
-    ]
+        { count: 28, gender: '男' },
+        { count: 19, gender: '女' },
+        { count: 31, gender: '不展示' },
+    ];
+    console.log(data);
+
     const chartRef = useRef<any>(null);
     const options = {
         tooltip: {},
@@ -29,9 +31,9 @@ const RoseChart: React.FC<FCprops> = ({ data }) => {
                         show: true,
                     },
                 },
-                data: fansData.map(d=>({
-                    name:d.label,
-                    value:d.count
+                data: data.map(d => ({
+                    name: d.gender,
+                    value: d.count
                 })),
             }
         ]
@@ -43,9 +45,29 @@ const RoseChart: React.FC<FCprops> = ({ data }) => {
             chart.dispose();
         }
     }, []);
+    useEffect(() => {
+        const chart = echarts.init(chartRef.current);
+        
+        if (chart) {
+            chart.setOption({
+                series: [
+                    {
+                        data: data.map((d) => ({
+                            name: d.gender,
+                            value: d.count,
+                        })),
+                    },
+                ],
+                notMerge: false, // 设置为 false 表示合并数据而不是覆盖
+            });
+        }
+        
+    }, [data, chartRef.current]);
+
+
 
     return (
-        <div id='roseChart' ref={chartRef} style={{width:200, height:300}}></div>
+        <div id='roseChart' ref={chartRef} style={{ width: 200, height: 300 }}></div>
     );
 };
 

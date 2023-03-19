@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useInsertionEffect, useRef, useState } from "react";
 import { Chart } from '@antv/g2';
 interface FCprops {
     data: any[]
@@ -11,6 +11,13 @@ const LineChart: React.FC<FCprops> = ({ data }) => {
             creatChart();
         }
     }, []);
+    useEffect(()=>{
+        const chart = chartRef.current
+
+        if(chart){            
+            chart.changeData(data);
+        }
+    },[data])
 
 
 
@@ -28,19 +35,19 @@ const LineChart: React.FC<FCprops> = ({ data }) => {
         //
         chart.scale({
             //x轴
-            year: {
+            date: {
                 range: [0, 1]// 刻度间距
             },
             //y
-            value: {
+            new_fans: {
                 min: 0,
                 nice: true//自动配置合适的刻度值
             }
         });
         // 绘制折线
-        chart.line().position("year*value");
+        chart.line().position("date*new_fans");
         // 绘制点
-        chart.point().position('year*value').size(4).shape('circle').style({
+        chart.point().position('date*new_fans').size(4).shape('circle').style({
             stroke: '#fff', //边框
             lineWidth: 1
         });

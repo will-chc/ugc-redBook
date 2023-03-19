@@ -25,7 +25,7 @@ const HistorgamChart:React.FC<FCprops> = ({data}) => {
         chart.scale('sales', {
           tickInterval: 20
         });
-        chart.interval().position('year*value');
+        chart.interval().position('date*new_fans');
         chart.render();
     }
     return (
